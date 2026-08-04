@@ -231,6 +231,12 @@ public class FeedbackServiceImp implements FeedbackService {
     }
 
     @Override
+    public Page<FeedbackResponse> searchFeedbacks(String keyword, StatutFeedback statut, int page, int size) {
+        String normalized = keyword == null ? "" : keyword.trim();
+        return repository.search(normalized, statut, PageRequest.of(page, size)).map(mapper::toResponseDto);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public List<FeedbackResponse> getFeedbacksByStatut(StatutFeedback statutFeedback) {
         return repository.findByStatutFeedback(statutFeedback).stream().map(mapper::toResponseDto).toList();
@@ -258,6 +264,15 @@ public class FeedbackServiceImp implements FeedbackService {
     @Transactional(readOnly = true)
     public Page<FeedbackResponse> getFeedbacksByUtilisateurPage(Long utilisateurId, int page, int size) {
         return repository.findByUtilisateurIdAndSupprimeFalse(utilisateurId, PageRequest.of(page, size))
+                .map(mapper::toResponseDto);
+    }
+
+    @Override
+    public Page<FeedbackResponse> searchFeedbacksByUtilisateur(
+            Long utilisateurId, String keyword, StatutFeedback statut, int page, int size
+    ) {
+        String normalized = keyword == null ? "" : keyword.trim();
+        return repository.searchByUtilisateur(utilisateurId, normalized, statut, PageRequest.of(page, size))
                 .map(mapper::toResponseDto);
     }
 

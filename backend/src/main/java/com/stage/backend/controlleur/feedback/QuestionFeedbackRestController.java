@@ -69,9 +69,11 @@ public class QuestionFeedbackRestController {
     @PreAuthorize(SecurityRoles.MANAGE_QUESTIONS)
     public ResponseEntity<Page<QuestionFeedbackResponse>> getQuestionsPage(
             @RequestParam @Min(0) int page,
-            @RequestParam @Min(1) int size
+            @RequestParam @Min(1) int size,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) TypeQuestion type
     ) {
-        return ResponseEntity.ok(service.getQuestionsPage(page, size));
+        return ResponseEntity.ok(service.searchQuestions(q, type, page, size));
     }
 
     @GetMapping("/get-questions-by-type/type")

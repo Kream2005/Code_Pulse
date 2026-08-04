@@ -3,6 +3,7 @@ import Card from '../../components/Card';
 import ErrorBanner from '../../components/ErrorBanner';
 import PageHeader from '../../components/PageHeader';
 import Pagination from '../../components/Pagination';
+import SearchInput from '../../components/SearchInput';
 import StatusBadge from '../../components/StatusBadge';
 import Table from '../../components/Table';
 import {
@@ -12,14 +13,17 @@ import {
   setTemporaryPassword,
 } from '../../api/resources';
 import type { DemandeReinitialisationDto } from '../../api/types';
+import { useI18n } from '../../i18n/I18nContext';
 
 export default function PasswordRequests() {
+  const { t } = useI18n();
   const [items, setItems] = useState<DemandeReinitialisationDto[]>([]);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [statut, setStatut] = useState('EN_ATTENTE');
+  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -28,7 +32,7 @@ export default function PasswordRequests() {
 
   function reload() {
     setLoading(true);
-    getDemandesPage(page, size, statut || undefined)
+    getDemandesPage(page, size, statut || undefined, search || undefined)
       .then((data) => {
         setItems(data.content);
         setTotalPages(data.totalPages);
@@ -38,7 +42,12 @@ export default function PasswordRequests() {
       .finally(() => setLoading(false));
   }
 
-  useEffect(reload, [page, size, statut]);
+  useEffect(reload, [page, size, statut, search]);
+
+  function onSearchChange(value: string) {
+    setPage(0);
+    setSearch(value);
+  }
 
   async function onSend(d: DemandeReinitialisationDto) {
     setWorkingId(d.id);
@@ -120,10 +129,18 @@ export default function PasswordRequests() {
         </div>
       )}
       <Card>
+        <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-5 py-3 dark:border-slate-700">
+          <SearchInput
+            value={search}
+            onChange={onSearchChange}
+            placeholder={t('common.searchPlaceholder')}
+            className="max-w-xs"
+          />
+        </div>
         <Table
           columns={['Email', 'Statut', 'Date', 'Actions']}
           isEmpty={loading || items.length === 0}
-          emptyLabel={loading ? 'Chargement…' : 'Aucune demande.'}
+          emptyLabel={loading ? 'Chargement…' : search ? t('common.noResults') : 'Aucune demande.'}
         >
           {items.map((d) => (
             <tr key={d.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/60">

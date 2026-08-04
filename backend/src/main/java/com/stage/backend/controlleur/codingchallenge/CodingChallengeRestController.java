@@ -66,9 +66,11 @@ public class CodingChallengeRestController {
     @PreAuthorize(SecurityRoles.READ_FEEDBACKS)
     public ResponseEntity<Page<CodingChallengeDto>> getCodingChallengesPage(
             @RequestParam @Min(0) int page,
-            @RequestParam @Min(1) int size
+            @RequestParam @Min(1) int size,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String tag
     ) {
-        return ResponseEntity.ok(service.getCodingChallengesPage(page, size));
+        return ResponseEntity.ok(service.searchCodingChallenges(q, tag, page, size));
     }
 
     @GetMapping("/get-coding-challenge-titre")

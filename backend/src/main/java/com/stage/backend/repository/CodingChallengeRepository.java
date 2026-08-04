@@ -4,6 +4,8 @@ import com.stage.backend.entity.CodingChallenge;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.ZonedDateTime;
@@ -25,4 +27,17 @@ public interface CodingChallengeRepository extends JpaRepository<CodingChallenge
     long countBySupprimeFalse();
 
     long countBySupprimeTrue();
+
+    @Query("""
+            SELECT c FROM coding_challenge c
+            WHERE c.supprime = false
+            AND (:tag IS NULL OR :tag = '' OR LOWER(c.tag) = LOWER(:tag))
+            AND (
+                :keyword IS NULL OR :keyword = ''
+                OR LOWER(c.titre) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(c.description) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(c.tag) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            )
+            """)
+    Page<CodingChallenge> search(@Param("keyword") String keyword, @Param("tag") String tag, Pageable pageable);
 }

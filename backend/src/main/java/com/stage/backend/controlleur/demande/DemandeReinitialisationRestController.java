@@ -33,10 +33,11 @@ public class DemandeReinitialisationRestController {
     @PreAuthorize(SecurityRoles.ADMIN_CODEPULSE)
     public ResponseEntity<Page<DemandeReinitialisationDto>> listerPage(
             @RequestParam(required = false) StatutDemandeReinit statut,
+            @RequestParam(required = false) String q,
             @RequestParam int page,
             @RequestParam int size
     ) {
-        return ResponseEntity.ok(service.listerPage(statut, page, size));
+        return ResponseEntity.ok(service.rechercherPage(q, statut, page, size));
     }
 
     @PostMapping("/{id}/send-link")

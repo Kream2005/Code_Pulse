@@ -113,6 +113,13 @@ public class DemandeReinitialisationServiceImp implements DemandeReinitialisatio
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Page<DemandeReinitialisationDto> rechercherPage(String keyword, StatutDemandeReinit statut, int page, int size) {
+        String normalized = keyword == null ? "" : keyword.trim();
+        return demandeRepository.search(normalized, statut, PageRequest.of(page, size)).map(this::toDto);
+    }
+
+    @Override
     public DemandeReinitialisationDto envoyerLien(Long demandeId) {
         DemandeReinitialisation demande = getPending(demandeId);
         Utilisateur user = requireUser(demande);

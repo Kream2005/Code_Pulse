@@ -43,9 +43,12 @@ public class IntegrationLogRestController {
     @PreAuthorize(SecurityRoles.READ_LOGS)
     public ResponseEntity<Page<IntegrationLogResponse>> getIntegrationLogsPage(
             @RequestParam @Min(0) int page,
-            @RequestParam @Min(1) int size
+            @RequestParam @Min(1) int size,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) TypeLog type,
+            @RequestParam(required = false) StatutLog statut
     ) {
-        return ResponseEntity.ok(service.getIntegrationLogsPage(page, size));
+        return ResponseEntity.ok(service.searchIntegrationLogs(q, type, statut, page, size));
     }
 
     @GetMapping("/get-integration-logs-by-type")

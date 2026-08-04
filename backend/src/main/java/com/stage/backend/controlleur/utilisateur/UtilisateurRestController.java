@@ -91,9 +91,11 @@ public class UtilisateurRestController {
     @PreAuthorize(SecurityRoles.ADMIN_CODEPULSE)
     public ResponseEntity<Page<UtilisateurDto>> getUtilisateursPage(
             @RequestParam int page,
-            @RequestParam int size
+            @RequestParam int size,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) Role role
     ) {
-        return ResponseEntity.ok(service.getUtilisateursPage(page, size));
+        return ResponseEntity.ok(service.searchUtilisateurs(q, role, page, size));
     }
 
     @GetMapping("/exists")

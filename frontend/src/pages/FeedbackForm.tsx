@@ -4,6 +4,7 @@ import Card from '../components/Card';
 import ErrorBanner from '../components/ErrorBanner';
 import PageHeader from '../components/PageHeader';
 import Pagination from '../components/Pagination';
+import SearchInput from '../components/SearchInput';
 import Table from '../components/Table';
 import { getUserId } from '../auth';
 import {
@@ -32,6 +33,7 @@ export default function FeedbackFormPage() {
   const [size, setSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     if (challengeId) {
@@ -53,7 +55,7 @@ export default function FeedbackFormPage() {
       return;
     }
     setLoading(true);
-    getNotificationsByUserPage(uid, page, size)
+    getNotificationsByUserPage(uid, page, size, search || undefined)
       .then((data) => {
         setPicker(data.content);
         setTotalPages(data.totalPages);
@@ -61,7 +63,12 @@ export default function FeedbackFormPage() {
       })
       .catch((err) => setError(err.response?.data?.message ?? 'Chargement impossible.'))
       .finally(() => setLoading(false));
-  }, [challengeId, page, size]);
+  }, [challengeId, page, size, search]);
+
+  function onSearchChange(value: string) {
+    setPage(0);
+    setSearch(value);
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -98,10 +105,13 @@ export default function FeedbackFormPage() {
         />
         {error && <ErrorBanner message={error} />}
         <Card>
+          <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-5 py-3 dark:border-slate-700">
+            <SearchInput value={search} onChange={onSearchChange} className="max-w-xs" />
+          </div>
           <Table
             columns={['Challenge', 'Tag', 'Action']}
             isEmpty={loading || picker.length === 0}
-            emptyLabel={loading ? 'Chargement…' : 'Aucune notification.'}
+            emptyLabel={loading ? 'Chargement…' : search ? 'Aucun résultat.' : 'Aucune notification.'}
           >
             {picker.map((n) => (
               <tr key={n.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/60">

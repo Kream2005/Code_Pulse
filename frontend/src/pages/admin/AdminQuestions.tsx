@@ -3,11 +3,17 @@ import Card from '../../components/Card';
 import ErrorBanner from '../../components/ErrorBanner';
 import PageHeader from '../../components/PageHeader';
 import Pagination from '../../components/Pagination';
+import SearchInput from '../../components/SearchInput';
+import FilterSelect from '../../components/FilterSelect';
 import Table from '../../components/Table';
 import { addQuestion, deleteQuestion, getQuestionsPage } from '../../api/resources';
 import type { QuestionFeedbackDto } from '../../api/types';
+import { useI18n } from '../../i18n/I18nContext';
+
+const QUESTION_TYPES = ['TEXTE', 'NOTE', 'CHOIX'];
 
 export default function AdminQuestions() {
+  const { t } = useI18n();
   const [items, setItems] = useState<QuestionFeedbackDto[]>([]);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
@@ -18,10 +24,12 @@ export default function AdminQuestions() {
   const [libelle, setLibelle] = useState('');
   const [type, setType] = useState('TEXTE');
   const [obligatoire, setObligatoire] = useState(true);
+  const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
 
   function reload() {
     setLoading(true);
-    getQuestionsPage(page, size)
+    getQuestionsPage(page, size, search, typeFilter)
       .then((data) => {
         setItems(data.content);
         setTotalPages(data.totalPages);
@@ -31,7 +39,17 @@ export default function AdminQuestions() {
       .finally(() => setLoading(false));
   }
 
-  useEffect(reload, [page, size]);
+  useEffect(reload, [page, size, search, typeFilter]);
+
+  function onSearchChange(value: string) {
+    setPage(0);
+    setSearch(value);
+  }
+
+  function onTypeFilterChange(value: string) {
+    setPage(0);
+    setTypeFilter(value);
+  }
 
   async function onAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -86,10 +104,21 @@ export default function AdminQuestions() {
         </form>
       </Card>
       <Card>
+        <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-5 py-3 dark:border-slate-700">
+          <SearchInput value={search} onChange={onSearchChange} className="max-w-xs" />
+          <FilterSelect
+            value={typeFilter}
+            onChange={onTypeFilterChange}
+            allLabel={t('common.allTypes')}
+            options={QUESTION_TYPES.map((ty) => ({ value: ty, label: ty }))}
+          />
+        </div>
         <Table
           columns={['Libellé', 'Type', 'Obligatoire', 'Action']}
           isEmpty={loading || items.length === 0}
-          emptyLabel={loading ? 'Chargement…' : 'Aucune question.'}
+          emptyLabel={
+            loading ? 'Chargement…' : search || typeFilter ? t('common.noResults') : 'Aucune question.'
+          }
         >
           {items.map((q) => (
             <tr key={q.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/60">

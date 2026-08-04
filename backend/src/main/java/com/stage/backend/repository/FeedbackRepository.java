@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.ZonedDateTime;
@@ -40,4 +41,41 @@ public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
 
     @Query("SELECT AVG(f.noteGlobale) FROM feedback f")
     Float getAverageNoteGlobale();
+
+    @EntityGraph(attributePaths = {"utilisateur", "codingChallenge"})
+    @Query("""
+            SELECT f FROM feedback f
+            LEFT JOIN f.utilisateur u
+            WHERE f.supprime = false
+            AND (:statut IS NULL OR f.statutFeedback = :statut)
+            AND (
+                :keyword IS NULL OR :keyword = ''
+                OR LOWER(f.commentaire) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(f.challengeTitre) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(f.challengeTag) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(u.nom) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(u.prenom) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            )
+            """)
+    Page<Feedback> search(@Param("keyword") String keyword, @Param("statut") StatutFeedback statut, Pageable pageable);
+
+    @Query("""
+            SELECT f FROM feedback f
+            WHERE f.supprime = false
+            AND f.utilisateur.id = :utilisateurId
+            AND (:statut IS NULL OR f.statutFeedback = :statut)
+            AND (
+                :keyword IS NULL OR :keyword = ''
+                OR LOWER(f.commentaire) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(f.challengeTitre) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(f.challengeTag) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            )
+            """)
+    Page<Feedback> searchByUtilisateur(
+            @Param("utilisateurId") Long utilisateurId,
+            @Param("keyword") String keyword,
+            @Param("statut") StatutFeedback statut,
+            Pageable pageable
+    );
 }

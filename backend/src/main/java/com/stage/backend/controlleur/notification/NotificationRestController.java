@@ -56,10 +56,12 @@ public class NotificationRestController {
     public ResponseEntity<Page<NotificationDto>> getNotificationsByUtilisateurPage(
             @RequestParam Long utilisateurId,
             @RequestParam int page,
-            @RequestParam int size
+            @RequestParam int size,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) StatutNotification statut
     ) {
         assertNotificationAccess(utilisateurId);
-        return ResponseEntity.ok(service.getNotificationsByUtilisateurPage(utilisateurId, page, size));
+        return ResponseEntity.ok(service.searchNotificationsByUtilisateur(utilisateurId, q, statut, page, size));
     }
 
     @GetMapping("/get-all-notifications")
@@ -73,12 +75,10 @@ public class NotificationRestController {
     public ResponseEntity<Page<NotificationDto>> getAllNotificationsPage(
             @RequestParam int page,
             @RequestParam int size,
-            @RequestParam(required = false) StatutNotification statut
+            @RequestParam(required = false) StatutNotification statut,
+            @RequestParam(required = false) String q
     ) {
-        if (statut != null) {
-            return ResponseEntity.ok(service.getNotificationsByStatutPage(statut, page, size));
-        }
-        return ResponseEntity.ok(service.getAllNotificationsPage(page, size));
+        return ResponseEntity.ok(service.searchNotifications(q, statut, page, size));
     }
 
     @GetMapping("/get-notification-by-statut")

@@ -129,6 +129,14 @@ public class AnalyticsServiceImp implements AnalyticsService {
     }
 
     @Override
+    public Page<ChallengeStatisticsResponse> searchChallengeStatistics(String keyword, int page, int size) {
+        String normalized = keyword == null ? "" : keyword.trim();
+        return codingChallengeRepository
+                .search(normalized, "", PageRequest.of(Math.max(0, page), Math.max(1, size)))
+                .map(c -> getChallengeStatistics(c.getId()));
+    }
+
+    @Override
     public PeriodExportResponse exportDataForPeriod(ZonedDateTime startDate, ZonedDateTime endDate, String format) {
         String body = submittedFeedbacks().stream()
                 .filter(f -> f.getCreatedAt() != null)

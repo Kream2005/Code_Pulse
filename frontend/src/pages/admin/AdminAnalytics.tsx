@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Card from '../../components/Card';
 import PageHeader from '../../components/PageHeader';
 import Pagination from '../../components/Pagination';
+import SearchInput from '../../components/SearchInput';
 import StatCard from '../../components/StatCard';
 import Table from '../../components/Table';
 import {
@@ -40,6 +41,8 @@ export default function AdminAnalytics() {
   const [totalElements, setTotalElements] = useState(0);
   const [tagPage, setTagPage] = useState(0);
   const [tagSize, setTagSize] = useState(10);
+  const [tagSearch, setTagSearch] = useState('');
+  const [statsSearch, setStatsSearch] = useState('');
 
   useEffect(() => {
     getManagerDashboardKpis().then(setKpi).catch(() => setKpi(null));
@@ -48,7 +51,7 @@ export default function AdminAnalytics() {
   }, []);
 
   useEffect(() => {
-    getChallengeStatisticsPage(page, size)
+    getChallengeStatisticsPage(page, size, statsSearch || undefined)
       .then((data) => {
         setStats(data.content);
         setTotalPages(data.totalPages);
@@ -59,13 +62,29 @@ export default function AdminAnalytics() {
         setTotalPages(0);
         setTotalElements(0);
       });
-  }, [page, size]);
+  }, [page, size, statsSearch]);
 
-  const tagTotalPages = Math.max(1, Math.ceil(tags.length / tagSize) || 1);
+  function onStatsSearchChange(value: string) {
+    setPage(0);
+    setStatsSearch(value);
+  }
+
+  function onTagSearchChange(value: string) {
+    setTagPage(0);
+    setTagSearch(value);
+  }
+
+  const filteredTags = useMemo(() => {
+    const needle = tagSearch.trim().toLowerCase();
+    if (!needle) return tags;
+    return tags.filter((row) => row.tag.toLowerCase().includes(needle));
+  }, [tags, tagSearch]);
+
+  const tagTotalPages = Math.max(1, Math.ceil(filteredTags.length / tagSize) || 1);
   const pagedTags = useMemo(() => {
     const start = tagPage * tagSize;
-    return tags.slice(start, start + tagSize);
-  }, [tags, tagPage, tagSize]);
+    return filteredTags.slice(start, start + tagSize);
+  }, [filteredTags, tagPage, tagSize]);
 
   useEffect(() => {
     if (tagPage > 0 && tagPage >= tagTotalPages) {
@@ -102,7 +121,14 @@ export default function AdminAnalytics() {
           <div className="border-b border-slate-200 px-5 py-3 text-sm font-semibold text-slate-800 dark:border-slate-700 dark:text-slate-100">
             {t('admin.scoresByTag')}
           </div>
-          <Table columns={[t('admin.tag'), t('admin.average')]} isEmpty={pagedTags.length === 0}>
+          <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-5 py-3 dark:border-slate-700">
+            <SearchInput value={tagSearch} onChange={onTagSearchChange} className="max-w-xs" />
+          </div>
+          <Table
+            columns={[t('admin.tag'), t('admin.average')]}
+            isEmpty={pagedTags.length === 0}
+            emptyLabel={tagSearch ? t('common.noResults') : undefined}
+          >
             {pagedTags.map((row) => (
               <tr key={row.tag}>
                 <td className="px-5 py-3">{row.tag}</td>
@@ -113,7 +139,7 @@ export default function AdminAnalytics() {
           <Pagination
             page={tagPage}
             totalPages={tagTotalPages}
-            totalElements={tags.length}
+            totalElements={filteredTags.length}
             size={tagSize}
             onPageChange={setTagPage}
             onSizeChange={(s) => {
@@ -141,9 +167,13 @@ export default function AdminAnalytics() {
         <div className="border-b border-slate-200 px-5 py-3 text-sm font-semibold text-slate-800 dark:border-slate-700 dark:text-slate-100">
           {t('admin.statsByChallenge')}
         </div>
+        <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-5 py-3 dark:border-slate-700">
+          <SearchInput value={statsSearch} onChange={onStatsSearchChange} className="max-w-xs" />
+        </div>
         <Table
           columns={[t('inbox.challenge'), t('admin.average'), t('admin.feedbackCount')]}
           isEmpty={stats.length === 0}
+          emptyLabel={statsSearch ? t('common.noResults') : undefined}
         >
           {stats.map((s) => (
             <tr key={s.challengeId}>

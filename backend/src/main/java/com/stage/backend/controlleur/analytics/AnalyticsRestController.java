@@ -93,10 +93,11 @@ public class AnalyticsRestController {
     @PreAuthorize(SecurityRoles.READ_FEEDBACKS)
     public ResponseEntity<Page<ChallengeStatisticsResponse>> getChallengeStatisticsPage(
             @RequestParam @Min(0) int page,
-            @RequestParam @Min(1) int size
+            @RequestParam @Min(1) int size,
+            @RequestParam(required = false) String q
     ) {
         logAccess("challenge-statistics-page");
-        return ResponseEntity.ok(analyticsService.getChallengeStatisticsPage(page, size));
+        return ResponseEntity.ok(analyticsService.searchChallengeStatistics(q, page, size));
     }
 
     @GetMapping("/challenge-statistics/{challengeId}")

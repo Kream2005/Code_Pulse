@@ -15,6 +15,8 @@ public interface DemandeReinitialisationService {
 
     Page<DemandeReinitialisationDto> listerPage(StatutDemandeReinit statut, int page, int size);
 
+    Page<DemandeReinitialisationDto> rechercherPage(String keyword, StatutDemandeReinit statut, int page, int size);
+
     DemandeReinitialisationDto envoyerLien(Long demandeId);
 
     DemandeReinitialisationDto definirMotDePasseTemporaire(Long demandeId, String temporaryPassword);

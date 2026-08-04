@@ -21,18 +21,24 @@ import type {
   UtilisateurDto,
 } from './types';
 
-export async function getNotificationsByUserPage(utilisateurId: number, page: number, size: number) {
+export async function getNotificationsByUserPage(
+  utilisateurId: number,
+  page: number,
+  size: number,
+  q?: string,
+  statut?: string
+) {
   const { data } = await client.get<PageResponse<NotificationDto>>(
     '/notifications/get-notifications-by-utilisateur-pages/page',
-    { params: { utilisateurId, page, size } }
+    { params: { utilisateurId, page, size, ...(q ? { q } : {}), ...(statut ? { statut } : {}) } }
   );
   return data;
 }
 
-export async function getNotificationsPage(page: number, size: number, statut?: string) {
+export async function getNotificationsPage(page: number, size: number, statut?: string, q?: string) {
   const { data } = await client.get<PageResponse<NotificationDto>>(
     '/notifications/get-notifications-pages/page',
-    { params: { page, size, ...(statut ? { statut } : {}) } }
+    { params: { page, size, ...(statut ? { statut } : {}), ...(q ? { q } : {}) } }
   );
   return data;
 }
@@ -56,17 +62,23 @@ export async function submitFeedback(body: SubmitFeedbackRequest) {
   return data;
 }
 
-export async function getFeedbacksByUserPage(utilisateurId: number, page: number, size: number) {
+export async function getFeedbacksByUserPage(
+  utilisateurId: number,
+  page: number,
+  size: number,
+  q?: string,
+  statut?: string
+) {
   const { data } = await client.get<PageResponse<FeedbackResponse>>(
     '/feedbacks/get-feedback-by-utilisateur-pages/page',
-    { params: { utilisateurId, page, size } }
+    { params: { utilisateurId, page, size, ...(q ? { q } : {}), ...(statut ? { statut } : {}) } }
   );
   return data;
 }
 
-export async function getFeedbacksPage(page: number, size: number) {
+export async function getFeedbacksPage(page: number, size: number, q?: string, statut?: string) {
   const { data } = await client.get<PageResponse<FeedbackResponse>>('/feedbacks/get-feedback-pages/page', {
-    params: { page, size },
+    params: { page, size, ...(q ? { q } : {}), ...(statut ? { statut } : {}) },
   });
   return data;
 }
@@ -76,9 +88,9 @@ export async function getFeedbackDetails(id: number) {
   return data;
 }
 
-export async function getUsersPage(page: number, size: number) {
+export async function getUsersPage(page: number, size: number, q?: string, role?: string) {
   const { data } = await client.get<PageResponse<UtilisateurDto>>('/utilisateurs/get-users-pages/page', {
-    params: { page, size },
+    params: { page, size, ...(q ? { q } : {}), ...(role ? { role } : {}) },
   });
   return data;
 }
@@ -108,10 +120,10 @@ export async function getMe() {
   return data;
 }
 
-export async function getChallengesPage(page: number, size: number) {
+export async function getChallengesPage(page: number, size: number, q?: string, tag?: string) {
   const { data } = await client.get<PageResponse<CodingChallengeDto>>(
     '/coding-challenges/get-coding-challenges-pages/page',
-    { params: { page, size } }
+    { params: { page, size, ...(q ? { q } : {}), ...(tag ? { tag } : {}) } }
   );
   return data;
 }
@@ -126,18 +138,24 @@ export async function deleteChallenge(id: number) {
   return data;
 }
 
-export async function getLogsPage(page: number, size: number) {
+export async function getLogsPage(
+  page: number,
+  size: number,
+  q?: string,
+  type?: string,
+  statut?: string
+) {
   const { data } = await client.get<PageResponse<IntegrationLogDto>>(
     '/integration-logs/get-integration-logs-pages/page',
-    { params: { page, size } }
+    { params: { page, size, ...(q ? { q } : {}), ...(type ? { type } : {}), ...(statut ? { statut } : {}) } }
   );
   return data;
 }
 
-export async function getQuestionsPage(page: number, size: number) {
+export async function getQuestionsPage(page: number, size: number, q?: string, type?: string) {
   const { data } = await client.get<PageResponse<QuestionFeedbackDto>>(
     '/questions-feedback/get-questions-pages/page',
-    { params: { page, size } }
+    { params: { page, size, ...(q ? { q } : {}), ...(type ? { type } : {}) } }
   );
   return data;
 }
@@ -151,9 +169,9 @@ export async function deleteQuestion(id: number) {
   await client.delete(`/questions-feedback/delete-question/${id}`);
 }
 
-export async function getDemandesPage(page: number, size: number, statut?: string) {
+export async function getDemandesPage(page: number, size: number, statut?: string, q?: string) {
   const { data } = await client.get<PageResponse<DemandeReinitialisationDto>>('/demandes-reinit/page', {
-    params: { page, size, ...(statut ? { statut } : {}) },
+    params: { page, size, ...(statut ? { statut } : {}), ...(q ? { q } : {}) },
   });
   return data;
 }
@@ -198,10 +216,10 @@ export async function getChallengeStatistics() {
   return data;
 }
 
-export async function getChallengeStatisticsPage(page: number, size: number) {
+export async function getChallengeStatisticsPage(page: number, size: number, q?: string) {
   const { data } = await client.get<PageResponse<ChallengeStatistics>>(
     '/analytics/challenge-statistics/page',
-    { params: { page, size } }
+    { params: { page, size, ...(q ? { q } : {}) } }
   );
   return data;
 }

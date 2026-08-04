@@ -19,6 +19,8 @@ public interface CodingChallengeService {
 
     Page<CodingChallengeDto> getCodingChallengesPage(int page, int size);
 
+    Page<CodingChallengeDto> searchCodingChallenges(String keyword, String tag, int page, int size);
+
     List<CodingChallengeDto> rechercherChallengesByTitre(String titre);
 
     List<CodingChallengeDto> getChallengesByDescription(String description);

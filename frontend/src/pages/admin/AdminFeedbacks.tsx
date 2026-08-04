@@ -3,10 +3,15 @@ import Card from '../../components/Card';
 import ErrorBanner from '../../components/ErrorBanner';
 import PageHeader from '../../components/PageHeader';
 import Pagination from '../../components/Pagination';
+import SearchInput from '../../components/SearchInput';
+import FilterSelect from '../../components/FilterSelect';
 import StatusBadge from '../../components/StatusBadge';
 import Table from '../../components/Table';
 import { getFeedbacksPage } from '../../api/resources';
 import type { FeedbackResponse } from '../../api/types';
+import { useI18n } from '../../i18n/I18nContext';
+
+const FEEDBACK_STATUSES = ['EN_COURS', 'NON_SOUMIS', 'SOUMIS'];
 
 function userLabel(f: FeedbackResponse) {
   const name = [f.utilisateurPrenom, f.utilisateurNom].filter(Boolean).join(' ').trim();
@@ -18,6 +23,7 @@ function userLabel(f: FeedbackResponse) {
 }
 
 export default function AdminFeedbacks() {
+  const { t } = useI18n();
   const [items, setItems] = useState<FeedbackResponse[]>([]);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
@@ -25,10 +31,12 @@ export default function AdminFeedbacks() {
   const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [statutFilter, setStatutFilter] = useState('');
 
   useEffect(() => {
     setLoading(true);
-    getFeedbacksPage(page, size)
+    getFeedbacksPage(page, size, search, statutFilter)
       .then((data) => {
         setItems(data.content);
         setTotalPages(data.totalPages);
@@ -36,17 +44,38 @@ export default function AdminFeedbacks() {
       })
       .catch((err) => setError(err.response?.data?.message ?? 'Chargement impossible.'))
       .finally(() => setLoading(false));
-  }, [page, size]);
+  }, [page, size, search, statutFilter]);
+
+  function onSearchChange(value: string) {
+    setPage(0);
+    setSearch(value);
+  }
+
+  function onStatutFilterChange(value: string) {
+    setPage(0);
+    setStatutFilter(value);
+  }
 
   return (
     <div>
       <PageHeader title="Feedbacks" subtitle="Tous les retours soumis." />
       {error && <ErrorBanner message={error} />}
       <Card>
+        <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-5 py-3 dark:border-slate-700">
+          <SearchInput value={search} onChange={onSearchChange} className="max-w-xs" />
+          <FilterSelect
+            value={statutFilter}
+            onChange={onStatutFilterChange}
+            allLabel={t('common.allStatuses')}
+            options={FEEDBACK_STATUSES.map((s) => ({ value: s, label: s }))}
+          />
+        </div>
         <Table
           columns={['ID', 'Utilisateur', 'Challenge', 'Note', 'Statut', 'Date']}
           isEmpty={!loading && items.length === 0}
-          emptyLabel={loading ? 'Chargement…' : 'Aucun feedback.'}
+          emptyLabel={
+            loading ? 'Chargement…' : search || statutFilter ? t('common.noResults') : 'Aucun feedback.'
+          }
         >
           {items.map((f) => (
             <tr key={f.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/60">

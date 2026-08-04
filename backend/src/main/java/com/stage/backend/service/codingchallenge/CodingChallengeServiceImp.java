@@ -136,6 +136,16 @@ public class CodingChallengeServiceImp implements CodingChallengeService {
 
     @Override
     @Transactional(readOnly = true)
+    public Page<CodingChallengeDto> searchCodingChallenges(String keyword, String tag, int page, int size) {
+        String normalizedKeyword = keyword == null ? "" : keyword.trim();
+        String normalizedTag = tag == null ? "" : tag.trim();
+        return codingChallengeRepository
+                .search(normalizedKeyword, normalizedTag, PageRequest.of(page, size))
+                .map(mapper::toCodingChallengeDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<CodingChallengeDto> rechercherChallengesByTitre(String titre) {
         return codingChallengeRepository.findByTitreContainingIgnoreCase(titre)
                 .stream()

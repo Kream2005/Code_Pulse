@@ -111,6 +111,14 @@ public class QuestionFeedbackServiceImp implements QuestionFeedbackService{
 
     @Override
     @Transactional(readOnly = true)
+    public Page<QuestionFeedbackResponse> searchQuestions(String keyword, TypeQuestion type, int page, int size) {
+        String normalized = keyword == null ? "" : keyword.trim();
+        return repository.search(normalized, type, PageRequest.of(page, size))
+                         .map(mapper::toQuestionFeedbackResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<QuestionFeedbackResponse> getQuestionsByType(TypeQuestion type) {
         return repository.findByType(type)
                 .stream()

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Card from '../components/Card';
 import PageHeader from '../components/PageHeader';
 import Pagination from '../components/Pagination';
+import SearchInput from '../components/SearchInput';
 import StatusBadge from '../components/StatusBadge';
 import Table from '../components/Table';
 import { getUserId } from '../auth';
@@ -19,6 +20,7 @@ export default function MyFeedback() {
   const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     const uid = getUserId();
@@ -28,7 +30,7 @@ export default function MyFeedback() {
       return;
     }
     setLoading(true);
-    getFeedbacksByUserPage(uid, page, size)
+    getFeedbacksByUserPage(uid, page, size, search || undefined)
       .then((data) => {
         setItems(data.content);
         setTotalPages(data.totalPages);
@@ -36,13 +38,26 @@ export default function MyFeedback() {
       })
       .catch((err) => setError(err.response?.data?.message ?? t('common.errorGeneric')))
       .finally(() => setLoading(false));
-  }, [page, size, t]);
+  }, [page, size, search, t]);
+
+  function onSearchChange(value: string) {
+    setPage(0);
+    setSearch(value);
+  }
 
   return (
     <div>
       <PageHeader title={t('myFeedback.title')} subtitle={t('myFeedback.subtitle')} />
       {error && <p className="mb-4 text-red-600 dark:text-red-400">{error}</p>}
       <Card>
+        <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-5 py-3 dark:border-slate-700">
+          <SearchInput
+            value={search}
+            onChange={onSearchChange}
+            placeholder={t('common.searchPlaceholder')}
+            className="max-w-xs"
+          />
+        </div>
         <Table
           columns={[
             'ID',
@@ -53,7 +68,7 @@ export default function MyFeedback() {
             t('common.action'),
           ]}
           isEmpty={loading || items.length === 0}
-          emptyLabel={loading ? t('common.loading') : t('myFeedback.empty')}
+          emptyLabel={loading ? t('common.loading') : search ? t('common.noResults') : t('myFeedback.empty')}
         >
           {items.map((f) => (
             <tr key={f.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/60">

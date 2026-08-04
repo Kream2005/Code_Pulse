@@ -63,9 +63,12 @@ public class FeedbackRestController {
     @GetMapping("/get-feedback-pages/page")
     @PreAuthorize(SecurityRoles.READ_FEEDBACKS)
     public ResponseEntity<Page<FeedbackResponse>> getFeedbacksPage(
-            @RequestParam int page, @RequestParam int size
+            @RequestParam int page,
+            @RequestParam int size,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) StatutFeedback statut
     ) {
-        return ResponseEntity.ok(service.getFeedbacksPage(page, size));
+        return ResponseEntity.ok(service.searchFeedbacks(q, statut, page, size));
     }
 
     @GetMapping("/get-feedback-by-statut")
@@ -109,13 +112,15 @@ public class FeedbackRestController {
     public ResponseEntity<Page<FeedbackResponse>> getFeedbacksByUtilisateurPage(
             @RequestParam Long utilisateurId,
             @RequestParam int page,
-            @RequestParam int size
+            @RequestParam int size,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) StatutFeedback statut
     ) {
         Long currentUserId = JwtUtils.getCurrentUserId();
         if (!utilisateurId.equals(currentUserId) && !hasReadFeedbackRole()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
-        return ResponseEntity.ok(service.getFeedbacksByUtilisateurPage(utilisateurId, page, size));
+        return ResponseEntity.ok(service.searchFeedbacksByUtilisateur(utilisateurId, q, statut, page, size));
     }
 
     @GetMapping("/get-feedback-by-created-at")

@@ -18,6 +18,8 @@ public interface IntegrationLogService {
 
     Page<IntegrationLogResponse> getIntegrationLogsPage(int page, int size);
 
+    Page<IntegrationLogResponse> searchIntegrationLogs(String keyword, TypeLog type, StatutLog statut, int page, int size);
+
     List<IntegrationLogResponse> getIntegrationLogsByType(TypeLog type);
 
     List<IntegrationLogResponse> getIntegrationLogsByStatut(StatutLog statut);

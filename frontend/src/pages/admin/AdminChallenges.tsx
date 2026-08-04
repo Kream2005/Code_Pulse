@@ -3,6 +3,7 @@ import Card from '../../components/Card';
 import ErrorBanner from '../../components/ErrorBanner';
 import PageHeader from '../../components/PageHeader';
 import Pagination from '../../components/Pagination';
+import SearchInput from '../../components/SearchInput';
 import Table from '../../components/Table';
 import { deleteChallenge, getChallengesPage, syncChallenges } from '../../api/resources';
 import type { CodingChallengeDto } from '../../api/types';
@@ -20,12 +21,13 @@ export default function AdminChallenges() {
   const [message, setMessage] = useState('');
   const [archivingId, setArchivingId] = useState<number | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [search, setSearch] = useState('');
 
   const reload = useCallback(
     (opts?: { quiet?: boolean }) => {
       if (!opts?.quiet) setLoading(true);
       setError('');
-      return getChallengesPage(page, size)
+      return getChallengesPage(page, size, search)
         .then((data) => {
           setItems(data.content);
           setTotalPages(data.totalPages);
@@ -37,12 +39,17 @@ export default function AdminChallenges() {
         .catch((err) => setError(err.response?.data?.message ?? 'Chargement impossible.'))
         .finally(() => setLoading(false));
     },
-    [page, size]
+    [page, size, search]
   );
 
   useEffect(() => {
     void reload();
   }, [reload]);
+
+  function onSearchChange(value: string) {
+    setPage(0);
+    setSearch(value);
+  }
 
   async function onSync() {
     setMessage('');
@@ -107,6 +114,9 @@ export default function AdminChallenges() {
         </div>
       )}
       <Card>
+        <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-5 py-3 dark:border-slate-700">
+          <SearchInput value={search} onChange={onSearchChange} className="max-w-xs" />
+        </div>
         <Table
           columns={[
             t('inbox.challenge'),
@@ -116,7 +126,7 @@ export default function AdminChallenges() {
             t('common.action'),
           ]}
           isEmpty={!loading && items.length === 0}
-          emptyLabel={loading ? t('common.loading') : t('common.empty')}
+          emptyLabel={loading ? t('common.loading') : search ? t('common.noResults') : t('common.empty')}
         >
           {items.map((c) => (
             <tr key={c.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/60">

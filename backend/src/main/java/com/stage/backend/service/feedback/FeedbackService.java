@@ -24,6 +24,8 @@ public interface FeedbackService {
 
     Page<FeedbackResponse> getFeedbacksPage(int page, int size);
 
+    Page<FeedbackResponse> searchFeedbacks(String keyword, StatutFeedback statut, int page, int size);
+
     List<FeedbackResponse> getFeedbacksByStatut(StatutFeedback statutFeedback);
 
     List<FeedbackResponse> getFeedbacksByNoteGlobale(Float noteGlobale);
@@ -33,6 +35,10 @@ public interface FeedbackService {
     List<FeedbackResponse> getFeedbacksByUtilisateur(Long utilisateurId);
 
     Page<FeedbackResponse> getFeedbacksByUtilisateurPage(Long utilisateurId, int page, int size);
+
+    Page<FeedbackResponse> searchFeedbacksByUtilisateur(
+            Long utilisateurId, String keyword, StatutFeedback statut, int page, int size
+    );
 
     List<FeedbackResponse> getFeedbacksByCreatedAt(ZonedDateTime createdAt);
 

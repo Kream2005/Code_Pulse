@@ -90,6 +90,17 @@ public class NotificationServiceImp implements NotificationService {
 
     @Override
     @Transactional(readOnly = true)
+    public Page<NotificationDto> searchNotificationsByUtilisateur(
+            Long utilisateurId, String keyword, StatutNotification statut, int page, int size
+    ) {
+        String normalized = keyword == null ? "" : keyword.trim();
+        return notificationRepository
+                .searchByUtilisateur(utilisateurId, normalized, statut, PageRequest.of(page, size))
+                .map(mapper::toNotificationDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<NotificationDto> getAllNotifications() {
         return notificationRepository.findAllWithDetails()
                 .stream()
@@ -117,6 +128,14 @@ public class NotificationServiceImp implements NotificationService {
     @Transactional(readOnly = true)
     public Page<NotificationDto> getNotificationsByStatutPage(StatutNotification statut, int page, int size) {
         return notificationRepository.findByStatut(statut, PageRequest.of(page, size))
+                .map(mapper::toNotificationDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<NotificationDto> searchNotifications(String keyword, StatutNotification statut, int page, int size) {
+        String normalized = keyword == null ? "" : keyword.trim();
+        return notificationRepository.search(normalized, statut, PageRequest.of(page, size))
                 .map(mapper::toNotificationDto);
     }
 

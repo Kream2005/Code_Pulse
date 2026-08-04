@@ -30,6 +30,8 @@ public interface UtilisateurService {
     // Utilisation de pagination pour optimiser le chargement des données
     Page<UtilisateurDto> getUtilisateursPage(int page, int size);
 
+    Page<UtilisateurDto> searchUtilisateurs(String keyword, Role role, int page, int size);
+
     long countUtilisateursByRole(Role role);
 
     long countTotalUtilisateurs();

@@ -194,6 +194,14 @@ public class UtilisateurServiceImp implements UtilisateurService{
 
     @Override
     @Transactional(readOnly = true)
+    public Page<UtilisateurDto> searchUtilisateurs(String keyword, Role role, int page, int size) {
+        String normalized = keyword == null ? "" : keyword.trim();
+        return repository.search(normalized, role, PageRequest.of(page, size))
+                .map(mapper::toUtilisateurDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public long countUtilisateursByRole(Role role) {
         return repository.countByRole(role);
     }

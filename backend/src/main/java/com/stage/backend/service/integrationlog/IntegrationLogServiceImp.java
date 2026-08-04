@@ -71,6 +71,16 @@ public class IntegrationLogServiceImp implements IntegrationLogService {
 
     @Override
     @Transactional(readOnly = true)
+    public Page<IntegrationLogResponse> searchIntegrationLogs(
+            String keyword, TypeLog type, StatutLog statut, int page, int size
+    ) {
+        String normalized = keyword == null ? "" : keyword.trim();
+        return repository.search(normalized, type, statut, PageRequest.of(page, size))
+                .map(mapper::toIntegrationLogResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<IntegrationLogResponse> getIntegrationLogsByType(TypeLog type) {
         return repository.findByType(type)
                 .stream()

@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -54,4 +55,36 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
             left join fetch n.utilisateur
             """)
     List<Notification> findAllWithDetails();
+
+    @EntityGraph(attributePaths = {"codingChallenge", "utilisateur"})
+    @Query("""
+            SELECT n FROM notification n
+            LEFT JOIN n.utilisateur u
+            LEFT JOIN n.codingChallenge c
+            WHERE (:statut IS NULL OR n.statut = :statut)
+            AND (
+                :keyword IS NULL OR :keyword = ''
+                OR LOWER(c.titre) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(u.nom) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(u.prenom) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            )
+            """)
+    Page<Notification> search(@Param("keyword") String keyword, @Param("statut") StatutNotification statut, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"codingChallenge", "utilisateur"})
+    @Query("""
+            SELECT n FROM notification n
+            LEFT JOIN n.codingChallenge c
+            WHERE n.supprime = false
+            AND n.utilisateur.id = :utilisateurId
+            AND (:statut IS NULL OR n.statut = :statut)
+            AND (:keyword IS NULL OR :keyword = '' OR LOWER(c.titre) LIKE LOWER(CONCAT('%', :keyword, '%')))
+            """)
+    Page<Notification> searchByUtilisateur(
+            @Param("utilisateurId") Long utilisateurId,
+            @Param("keyword") String keyword,
+            @Param("statut") StatutNotification statut,
+            Pageable pageable
+    );
 }

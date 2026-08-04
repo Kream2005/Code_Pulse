@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Card from '../components/Card';
 import PageHeader from '../components/PageHeader';
 import Pagination from '../components/Pagination';
+import SearchInput from '../components/SearchInput';
 import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
 import Table from '../components/Table';
@@ -26,6 +27,7 @@ export default function Inbox({ admin = false }: { admin?: boolean }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [statut, setStatut] = useState('');
+  const [search, setSearch] = useState('');
   const [kpi, setKpi] = useState<UserDashboardKpi | null>(null);
 
   useEffect(() => {
@@ -38,11 +40,11 @@ export default function Inbox({ admin = false }: { admin?: boolean }) {
     setLoading(true);
     setError('');
     const load = admin
-      ? getNotificationsPage(page, size, statut || undefined)
+      ? getNotificationsPage(page, size, statut || undefined, search || undefined)
       : (() => {
           const uid = getUserId();
           if (!uid) return Promise.reject(new Error(t('common.errorGeneric')));
-          return getNotificationsByUserPage(uid, page, size);
+          return getNotificationsByUserPage(uid, page, size, search || undefined, statut || undefined);
         })();
 
     load
@@ -55,7 +57,12 @@ export default function Inbox({ admin = false }: { admin?: boolean }) {
         setError(err.response?.data?.message ?? err.message ?? t('common.errorGeneric'));
       })
       .finally(() => setLoading(false));
-  }, [admin, page, size, statut, t]);
+  }, [admin, page, size, statut, search, t]);
+
+  function onSearchChange(value: string) {
+    setPage(0);
+    setSearch(value);
+  }
 
   async function markRead(n: NotificationDto) {
     if (n.statut === 'LUE') return;
@@ -104,6 +111,14 @@ export default function Inbox({ admin = false }: { admin?: boolean }) {
       )}
       {error && <p className="mb-4 text-red-600 dark:text-red-400">{error}</p>}
       <Card>
+        <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-5 py-3 dark:border-slate-700">
+          <SearchInput
+            value={search}
+            onChange={onSearchChange}
+            placeholder={t('common.searchPlaceholder')}
+            className="max-w-xs"
+          />
+        </div>
         <Table
           columns={[
             t('inbox.challenge'),
@@ -113,7 +128,7 @@ export default function Inbox({ admin = false }: { admin?: boolean }) {
             t('common.action'),
           ]}
           isEmpty={loading || items.length === 0}
-          emptyLabel={loading ? t('common.loading') : t('inbox.empty')}
+          emptyLabel={loading ? t('common.loading') : search ? t('common.noResults') : t('inbox.empty')}
         >
           {items.map((n) => (
             <tr key={n.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/60">

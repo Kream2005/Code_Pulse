@@ -22,6 +22,8 @@ public interface AnalyticsService {
 
     Page<ChallengeStatisticsResponse> getChallengeStatisticsPage(int page, int size);
 
+    Page<ChallengeStatisticsResponse> searchChallengeStatistics(String keyword, int page, int size);
+
     PeriodExportResponse exportDataForPeriod(ZonedDateTime startDate, ZonedDateTime endDate, String format);
 
     List<ChallengeRankingResponse> getTopChallenges(int limit);

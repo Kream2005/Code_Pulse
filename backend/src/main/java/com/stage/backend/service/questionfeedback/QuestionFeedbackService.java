@@ -20,6 +20,8 @@ public interface QuestionFeedbackService {
 
     Page<QuestionFeedbackResponse> getQuestionsPage(int page, int size);
 
+    Page<QuestionFeedbackResponse> searchQuestions(String keyword, TypeQuestion type, int page, int size);
+
     List<QuestionFeedbackResponse> getQuestionsByType(TypeQuestion type);
 
     List<QuestionFeedbackResponse> getQuestionsByObligatoire(boolean obligatoire);
