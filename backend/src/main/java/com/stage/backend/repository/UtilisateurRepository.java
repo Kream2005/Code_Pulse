@@ -32,7 +32,7 @@ public interface UtilisateurRepository extends JpaRepository<Utilisateur, Long> 
     long countByRoleAndSupprimeFalse(Role role);
 
     @Query("""
-            SELECT u FROM Utilisateur u
+            SELECT u FROM utilisateur u
             WHERE u.supprime = false
             AND (:role IS NULL OR u.role = :role)
             AND (

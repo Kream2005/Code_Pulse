@@ -82,7 +82,7 @@ class FeedbackServiceImpTest {
 
     @Test
     void submitFeedback_duplicate_returns409() {
-        when(repository.existsByCodingChallengeId(10L)).thenReturn(true);
+        when(repository.existsByUtilisateurIdAndCodingChallengeId(1L, 10L)).thenReturn(true);
 
         SubmitFeedbackRequest request = new SubmitFeedbackRequest(
                 10L, 4f, "ok", StatutFeedback.SOUMIS, List.of()
@@ -96,7 +96,7 @@ class FeedbackServiceImpTest {
 
     @Test
     void submitFeedback_missingMandatoryAnswer_returns400() {
-        when(repository.existsByCodingChallengeId(10L)).thenReturn(false);
+        when(repository.existsByUtilisateurIdAndCodingChallengeId(1L, 10L)).thenReturn(false);
         when(codingChallengeRepository.findById(10L)).thenReturn(Optional.of(challenge));
         when(utilisateurRepository.findById(1L)).thenReturn(Optional.of(user));
         when(questionFeedbackRepository.findByObligatoire(true)).thenReturn(List.of(mandatoryQuestion));
@@ -113,7 +113,7 @@ class FeedbackServiceImpTest {
 
     @Test
     void submitFeedback_happyPath_marksNotificationAsLue() {
-        when(repository.existsByCodingChallengeId(10L)).thenReturn(false);
+        when(repository.existsByUtilisateurIdAndCodingChallengeId(1L, 10L)).thenReturn(false);
         when(codingChallengeRepository.findById(10L)).thenReturn(Optional.of(challenge));
         when(utilisateurRepository.findById(1L)).thenReturn(Optional.of(user));
         when(questionFeedbackRepository.findByObligatoire(true)).thenReturn(List.of(mandatoryQuestion));
