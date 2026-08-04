@@ -79,8 +79,8 @@ cd "$ROOT/challenge-publisher"
 PUB_PID=""
 if [[ -x .venv/bin/python ]]; then
   .venv/bin/python publisher.py --mode both --interval 20 \
-    --email "${TARGET_EMAIL:-abdelkarim.ameur@capgemini.com}" \
-    --user-id "${TARGET_USER_ID:-88001}" &
+    --email "${TARGET_EMAIL:-demo.user@codepulse.local}" \
+    --user-id "${TARGET_USER_ID:-90002}" &
   PUB_PID=$!
 else
   echo "(Publisher skipped — create venv in challenge-publisher first)"
