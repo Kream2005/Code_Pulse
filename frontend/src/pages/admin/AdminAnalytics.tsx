@@ -6,17 +6,12 @@ import SearchInput from '../../components/SearchInput';
 import StatCard from '../../components/StatCard';
 import Table from '../../components/Table';
 import {
-  getChallengeStatisticsPage,
+  getLowestScoringTags,
   getManagerDashboardKpis,
   getScoresByTags,
-  getTopChallenges,
+  getTagStatisticsPage,
 } from '../../api/resources';
-import type {
-  AverageScoreByTag,
-  ChallengeRanking,
-  ChallengeStatistics,
-  ManagerDashboardKpi,
-} from '../../api/types';
+import type { AverageScoreByTag, ManagerDashboardKpi, TagStatistics } from '../../api/types';
 import { useI18n } from '../../i18n/I18nContext';
 
 function fmtScore(n: number | undefined) {
@@ -33,8 +28,8 @@ export default function AdminAnalytics() {
   const { t } = useI18n();
   const [kpi, setKpi] = useState<ManagerDashboardKpi | null>(null);
   const [tags, setTags] = useState<AverageScoreByTag[]>([]);
-  const [top, setTop] = useState<ChallengeRanking[]>([]);
-  const [stats, setStats] = useState<ChallengeStatistics[]>([]);
+  const [watchTags, setWatchTags] = useState<TagStatistics[]>([]);
+  const [stats, setStats] = useState<TagStatistics[]>([]);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
@@ -47,11 +42,11 @@ export default function AdminAnalytics() {
   useEffect(() => {
     getManagerDashboardKpis().then(setKpi).catch(() => setKpi(null));
     getScoresByTags().then(setTags).catch(() => undefined);
-    getTopChallenges(5).then(setTop).catch(() => undefined);
+    getLowestScoringTags(5).then(setWatchTags).catch(() => undefined);
   }, []);
 
   useEffect(() => {
-    getChallengeStatisticsPage(page, size, statsSearch || undefined)
+    getTagStatisticsPage(page, size, statsSearch || undefined)
       .then((data) => {
         setStats(data.content);
         setTotalPages(data.totalPages);
@@ -150,13 +145,17 @@ export default function AdminAnalytics() {
         </Card>
         <Card>
           <div className="border-b border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-800 dark:border-slate-700 dark:text-slate-100">
-            {t('admin.topChallenges')}
+            {t('admin.watchTags')}
           </div>
-          <Table columns={[t('inbox.challenge'), t('admin.metric')]} isEmpty={top.length === 0}>
-            {top.map((row) => (
-              <tr key={row.challengeId}>
-                <td className="px-4 py-2.5">{row.titre}</td>
-                <td className="px-4 py-2.5">{fmtScore(row.metricValue)}</td>
+          <Table
+            columns={[t('admin.tag'), t('admin.average')]}
+            isEmpty={watchTags.length === 0}
+            emptyLabel={t('common.empty')}
+          >
+            {watchTags.map((row) => (
+              <tr key={row.tag}>
+                <td className="px-4 py-2.5">{row.tag}</td>
+                <td className="px-4 py-2.5">{fmtScore(row.averageScore)}</td>
               </tr>
             ))}
           </Table>
@@ -165,21 +164,29 @@ export default function AdminAnalytics() {
 
       <Card className="mt-5">
         <div className="border-b border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-800 dark:border-slate-700 dark:text-slate-100">
-          {t('admin.statsByChallenge')}
+          {t('admin.statsByTag')}
         </div>
         <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-4 py-2.5 dark:border-slate-700">
           <SearchInput value={statsSearch} onChange={onStatsSearchChange} className="max-w-xs" />
         </div>
         <Table
-          columns={[t('inbox.challenge'), t('admin.average'), t('admin.feedbackCount')]}
+          columns={[
+            t('admin.tag'),
+            t('admin.average'),
+            t('admin.feedbackCount'),
+            t('admin.challengesCount'),
+            t('admin.completionRate'),
+          ]}
           isEmpty={stats.length === 0}
           emptyLabel={statsSearch ? t('common.noResults') : undefined}
         >
           {stats.map((s) => (
-            <tr key={s.challengeId}>
-              <td className="px-4 py-2.5">{s.titre}</td>
+            <tr key={s.tag}>
+              <td className="px-4 py-2.5">{s.tag}</td>
               <td className="px-4 py-2.5">{fmtScore(s.averageScore)}</td>
               <td className="px-4 py-2.5">{s.feedbackCount}</td>
+              <td className="px-4 py-2.5">{s.challengeCount}</td>
+              <td className="px-4 py-2.5">{fmtPct(s.completionRate)}</td>
             </tr>
           ))}
         </Table>

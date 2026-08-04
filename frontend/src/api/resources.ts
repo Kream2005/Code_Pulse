@@ -10,6 +10,7 @@ import type {
   AverageScoreByTag,
   ChallengeRanking,
   ChallengeStatistics,
+  TagStatistics,
   IntegrationLogDto,
   ManagerDashboardKpi,
   MeResponse,
@@ -216,6 +217,13 @@ export async function getTopChallenges(limit = 5) {
   return data;
 }
 
+export async function getLowestScoringTags(limit = 5) {
+  const { data } = await client.get<TagStatistics[]>('/analytics/lowest-scoring-tags', {
+    params: { limit },
+  });
+  return data;
+}
+
 export async function getChallengeStatistics() {
   const { data } = await client.get<ChallengeStatistics[]>('/analytics/challenge-statistics');
   return data;
@@ -224,6 +232,14 @@ export async function getChallengeStatistics() {
 export async function getChallengeStatisticsPage(page: number, size: number, q?: string) {
   const { data } = await client.get<PageResponse<ChallengeStatistics>>(
     '/analytics/challenge-statistics/page',
+    { params: { page, size, ...(q ? { q } : {}) } }
+  );
+  return data;
+}
+
+export async function getTagStatisticsPage(page: number, size: number, q?: string) {
+  const { data } = await client.get<PageResponse<TagStatistics>>(
+    '/analytics/tag-statistics/page',
     { params: { page, size, ...(q ? { q } : {}) } }
   );
   return data;

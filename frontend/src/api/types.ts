@@ -154,6 +154,14 @@ export interface ChallengeStatistics {
   feedbackCount: number;
 }
 
+export interface TagStatistics {
+  tag: string;
+  averageScore: number;
+  feedbackCount: number;
+  challengeCount: number;
+  completionRate: number;
+}
+
 export interface UserDashboardKpi {
   notificationsTotal: number;
   notificationsPending: number;

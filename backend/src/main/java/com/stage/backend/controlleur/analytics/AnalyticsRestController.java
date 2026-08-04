@@ -100,6 +100,26 @@ public class AnalyticsRestController {
         return ResponseEntity.ok(analyticsService.searchChallengeStatistics(q, page, size));
     }
 
+    @GetMapping("/tag-statistics/page")
+    @PreAuthorize(SecurityRoles.ANALYTICS)
+    public ResponseEntity<Page<TagStatisticsResponse>> getTagStatisticsPage(
+            @RequestParam @Min(0) int page,
+            @RequestParam @Min(1) int size,
+            @RequestParam(required = false) String q
+    ) {
+        logAccess("tag-statistics-page");
+        return ResponseEntity.ok(analyticsService.searchTagStatistics(q, page, size));
+    }
+
+    @GetMapping("/lowest-scoring-tags")
+    @PreAuthorize(SecurityRoles.ANALYTICS)
+    public ResponseEntity<List<TagStatisticsResponse>> getLowestScoringTags(
+            @RequestParam(defaultValue = "5") @Min(1) int limit
+    ) {
+        logAccess("lowest-scoring-tags");
+        return ResponseEntity.ok(analyticsService.getLowestScoringTags(limit));
+    }
+
     @GetMapping("/challenge-statistics/{challengeId}")
     @PreAuthorize(SecurityRoles.READ_FEEDBACKS)
     public ResponseEntity<ChallengeStatisticsResponse> getChallengeStatistics(

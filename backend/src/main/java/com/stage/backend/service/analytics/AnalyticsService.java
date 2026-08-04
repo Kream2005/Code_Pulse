@@ -24,6 +24,10 @@ public interface AnalyticsService {
 
     Page<ChallengeStatisticsResponse> searchChallengeStatistics(String keyword, int page, int size);
 
+    Page<TagStatisticsResponse> searchTagStatistics(String keyword, int page, int size);
+
+    List<TagStatisticsResponse> getLowestScoringTags(int limit);
+
     PeriodExportResponse exportDataForPeriod(ZonedDateTime startDate, ZonedDateTime endDate, String format);
 
     List<ChallengeRankingResponse> getTopChallenges(int limit);

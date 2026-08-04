@@ -20,13 +20,16 @@ import com.stage.backend.repository.UtilisateurRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.env.Environment;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -134,6 +137,33 @@ public class AnalyticsServiceImp implements AnalyticsService {
         return codingChallengeRepository
                 .search(normalized, "", PageRequest.of(Math.max(0, page), Math.max(1, size)))
                 .map(c -> getChallengeStatistics(c.getId()));
+    }
+
+    @Override
+    public Page<TagStatisticsResponse> searchTagStatistics(String keyword, int page, int size) {
+        int safePage = Math.max(0, page);
+        int safeSize = Math.max(1, size);
+        String needle = keyword == null ? "" : keyword.trim().toLowerCase(Locale.ROOT);
+        List<TagStatisticsResponse> all = buildTagStatistics().stream()
+                .filter(row -> needle.isEmpty() || row.tag().toLowerCase(Locale.ROOT).contains(needle))
+                .sorted(Comparator.comparing(TagStatisticsResponse::feedbackCount).reversed()
+                        .thenComparing(TagStatisticsResponse::tag))
+                .toList();
+        int from = Math.min(safePage * safeSize, all.size());
+        int to = Math.min(from + safeSize, all.size());
+        return new PageImpl<>(all.subList(from, to), PageRequest.of(safePage, safeSize), all.size());
+    }
+
+    @Override
+    public List<TagStatisticsResponse> getLowestScoringTags(int limit) {
+        int safeLimit = Math.max(1, limit);
+        return buildTagStatistics().stream()
+                .filter(row -> row.feedbackCount() != null && row.feedbackCount() > 0)
+                .sorted(Comparator.comparing((TagStatisticsResponse r) ->
+                                r.averageScore() == null ? Double.MAX_VALUE : r.averageScore())
+                        .thenComparing(TagStatisticsResponse::tag))
+                .limit(safeLimit)
+                .toList();
     }
 
     @Override
@@ -287,6 +317,52 @@ public class AnalyticsServiceImp implements AnalyticsService {
                         top ? "TOP" : "BOTTOM"
                 ))
                 .toList();
+    }
+
+    private List<TagStatisticsResponse> buildTagStatistics() {
+        List<CodingChallenge> challenges = codingChallengeRepository.findBySupprimeFalse();
+        Map<String, List<CodingChallenge>> challengesByTag = new LinkedHashMap<>();
+        for (CodingChallenge challenge : challenges) {
+            String tag = normalizeTag(challenge.getTag());
+            challengesByTag.computeIfAbsent(tag, ignored -> new ArrayList<>()).add(challenge);
+        }
+
+        Map<Long, Feedback> feedbackByChallengeId = submittedFeedbacks().stream()
+                .filter(f -> f.getCodingChallenge() != null)
+                .collect(Collectors.toMap(
+                        f -> f.getCodingChallenge().getId(),
+                        f -> f,
+                        (a, b) -> a
+                ));
+
+        List<TagStatisticsResponse> rows = new ArrayList<>();
+        for (Map.Entry<String, List<CodingChallenge>> entry : challengesByTag.entrySet()) {
+            String tag = entry.getKey();
+            List<CodingChallenge> tagChallenges = entry.getValue();
+            long challengeCount = tagChallenges.size();
+            List<Feedback> tagFeedbacks = tagChallenges.stream()
+                    .map(CodingChallenge::getId)
+                    .map(feedbackByChallengeId::get)
+                    .filter(Objects::nonNull)
+                    .toList();
+            long feedbackCount = tagFeedbacks.size();
+            double completion = challengeCount == 0 ? 0.0 : (feedbackCount * 100.0) / challengeCount;
+            rows.add(new TagStatisticsResponse(
+                    tag,
+                    averageScore(tagFeedbacks),
+                    feedbackCount,
+                    challengeCount,
+                    completion
+            ));
+        }
+        return rows;
+    }
+
+    private String normalizeTag(String tag) {
+        if (tag == null || tag.isBlank()) {
+            return "general";
+        }
+        return tag.trim();
     }
 
     private List<Feedback> submittedFeedbacks() {
