@@ -12,6 +12,7 @@ import com.stage.backend.enums.StatutFeedback;
 import com.stage.backend.enums.StatutLog;
 import com.stage.backend.enums.StatutNotification;
 import com.stage.backend.enums.TypeLog;
+import com.stage.backend.enums.TypeQuestion;
 import com.stage.backend.mapper.CodingChallengeMapper;
 import com.stage.backend.mapper.FeedbackMapper;
 import com.stage.backend.mapper.QuestionFeedbackMapper;
@@ -79,6 +80,7 @@ public class FeedbackServiceImp implements FeedbackService {
                 ));
         if (request.statut() == StatutFeedback.SOUMIS) {
             validateMandatoryQuestions(request);
+            validateAnswerFormats(request);
         }
         if (challenge.isSupprime()) {
             throw new ResponseStatusException(HttpStatus.GONE, "This coding challenge has been archived");
@@ -148,6 +150,67 @@ public class FeedbackServiceImp implements FeedbackService {
                         "Missing answer for mandatory question: " + q.getLibelle()
                 );
             }
+        }
+    }
+
+    private void validateAnswerFormats(SubmitFeedbackRequest request) {
+        if (request.reponses() == null) {
+            return;
+        }
+        for (SubmitFeedbackRequest.AnswerRequest answerReq : request.reponses()) {
+            String valeur = answerReq.valeur();
+            if (valeur == null || valeur.isBlank()) {
+                continue;
+            }
+            QuestionFeedback question = questionFeedbackRepository.findById(answerReq.questionId())
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            "Question not found: " + answerReq.questionId()
+                    ));
+            if (question.getType() == TypeQuestion.NOTE) {
+                validateNoteAnswer(question, valeur.trim(), request.codingChallengeId());
+            } else if (question.getType() == TypeQuestion.CHOIX) {
+                validateChoixAnswer(question, valeur.trim(), request.codingChallengeId());
+            }
+        }
+    }
+
+    private void validateNoteAnswer(QuestionFeedback question, String valeur, Long challengeId) {
+        float parsed;
+        try {
+            parsed = Float.parseFloat(valeur);
+        } catch (NumberFormatException ex) {
+            integrationLogService.logEvent(
+                    TypeLog.FEEDBACK,
+                    StatutLog.ERREUR,
+                    "Invalid NOTE answer for: " + question.getLibelle(),
+                    challengeId
+            );
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Answer for \"" + question.getLibelle() + "\" must be a number (e.g. 3.5)"
+            );
+        }
+        if (Float.isNaN(parsed) || Float.isInfinite(parsed) || parsed < 0f || parsed > 5f) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Answer for \"" + question.getLibelle() + "\" must be a number between 0 and 5"
+            );
+        }
+    }
+
+    private void validateChoixAnswer(QuestionFeedback question, String valeur, Long challengeId) {
+        List<String> options = question.getChoix() == null ? List.of() : question.getChoix();
+        if (options.isEmpty() || options.stream().noneMatch(valeur::equals)) {
+            integrationLogService.logEvent(
+                    TypeLog.FEEDBACK,
+                    StatutLog.ERREUR,
+                    "Invalid CHOIX answer for: " + question.getLibelle(),
+                    challengeId
+            );
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Answer for \"" + question.getLibelle() + "\" must be one of the proposed choices"
+            );
         }
     }
 

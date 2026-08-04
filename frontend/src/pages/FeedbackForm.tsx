@@ -12,9 +12,17 @@ import {
   getNotificationsByUserPage,
   submitFeedback,
 } from '../api/resources';
-import type { FeedbackFormResponse, NotificationDto } from '../api/types';
+import type { FeedbackFormResponse, NotificationDto, QuestionFeedback } from '../api/types';
+import { useI18n } from '../i18n/I18nContext';
+
+function isValidNote(value: string): boolean {
+  if (!value.trim()) return false;
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 && n <= 5;
+}
 
 export default function FeedbackFormPage() {
+  const { t } = useI18n();
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const challengeIdParam = params.get('challengeId');
@@ -22,6 +30,7 @@ export default function FeedbackFormPage() {
 
   const [formData, setFormData] = useState<FeedbackFormResponse | null>(null);
   const [answers, setAnswers] = useState<string[]>([]);
+  const [fieldErrors, setFieldErrors] = useState<string[]>([]);
   const [note, setNote] = useState(3);
   const [commentaire, setCommentaire] = useState('');
   const [error, setError] = useState('');
@@ -42,6 +51,7 @@ export default function FeedbackFormPage() {
         .then((data) => {
           setFormData(data);
           setAnswers(data.questions.map(() => ''));
+          setFieldErrors(data.questions.map(() => ''));
         })
         .catch((err) => setError(err.response?.data?.message ?? 'Formulaire indisponible.'))
         .finally(() => setLoading(false));
@@ -70,9 +80,49 @@ export default function FeedbackFormPage() {
     setSearch(value);
   }
 
+  function setAnswer(index: number, value: string, question: QuestionFeedback) {
+    setAnswers((prev) => {
+      const next = [...prev];
+      next[index] = value;
+      return next;
+    });
+    setFieldErrors((prev) => {
+      const next = [...prev];
+      if (question.type === 'NOTE' && value.trim() && !isValidNote(value)) {
+        next[index] = t('feedbackForm.noteInvalid');
+      } else {
+        next[index] = '';
+      }
+      return next;
+    });
+  }
+
+  function validateBeforeSubmit(): boolean {
+    if (!formData) return false;
+    const nextErrors = formData.questions.map((q, i) => {
+      const value = (answers[i] ?? '').trim();
+      if (q.obligatoire && !value) {
+        return t('feedbackForm.fieldRequired');
+      }
+      if (q.type === 'NOTE' && value && !isValidNote(value)) {
+        return t('feedbackForm.noteInvalid');
+      }
+      if (q.type === 'CHOIX' && value && !(q.choix ?? []).includes(value)) {
+        return t('feedbackForm.choiceMissing');
+      }
+      return '';
+    });
+    setFieldErrors(nextErrors);
+    return nextErrors.every((e) => !e);
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!formData) return;
+    if (!validateBeforeSubmit()) {
+      setError(t('feedbackForm.fixAnswers'));
+      return;
+    }
     setSaving(true);
     setError('');
     try {
@@ -96,22 +146,81 @@ export default function FeedbackFormPage() {
     }
   }
 
+  function renderQuestionInput(q: QuestionFeedback, i: number) {
+    const value = answers[i] ?? '';
+    const err = fieldErrors[i];
+    const baseClass =
+      'w-full rounded-lg border px-3 py-2.5 dark:bg-slate-800 dark:text-slate-100 ' +
+      (err
+        ? 'border-red-400 focus:border-red-500 focus:outline-none'
+        : 'border-slate-300 dark:border-slate-600');
+
+    if (q.type === 'NOTE') {
+      return (
+        <>
+          <input
+            type="number"
+            inputMode="decimal"
+            step="any"
+            min={0}
+            max={5}
+            value={value}
+            onChange={(e) => setAnswer(i, e.target.value, q)}
+            required={q.obligatoire}
+            placeholder={t('feedbackForm.noteHint')}
+            className={baseClass}
+          />
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('feedbackForm.noteHint')}</p>
+        </>
+      );
+    }
+
+    if (q.type === 'CHOIX') {
+      const options = q.choix ?? [];
+      if (options.length === 0) {
+        return <p className="text-sm text-amber-700 dark:text-amber-300">{t('feedbackForm.choiceMissing')}</p>;
+      }
+      return (
+        <select
+          value={value}
+          onChange={(e) => setAnswer(i, e.target.value, q)}
+          required={q.obligatoire}
+          className={baseClass}
+        >
+          <option value="">{t('feedbackForm.choicePlaceholder')}</option>
+          {options.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
+      );
+    }
+
+    return (
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => setAnswer(i, e.target.value, q)}
+        required={q.obligatoire}
+        className={baseClass}
+      />
+    );
+  }
+
   if (!challengeId) {
     return (
       <div>
-        <PageHeader
-          title="Donner un feedback"
-          subtitle="Choisissez un challenge depuis vos notifications."
-        />
+        <PageHeader title={t('feedbackForm.title')} subtitle={t('feedbackForm.subtitle')} />
         {error && <ErrorBanner message={error} />}
         <Card>
           <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-4 py-2.5 dark:border-slate-700">
             <SearchInput value={search} onChange={onSearchChange} className="max-w-xs" />
           </div>
           <Table
-            columns={['Challenge', 'Tag', 'Action']}
+            columns={[t('inbox.challenge'), t('inbox.tag'), t('common.action')]}
             isEmpty={loading || picker.length === 0}
-            emptyLabel={loading ? 'Chargement…' : search ? 'Aucun résultat.' : 'Aucune notification.'}
+            emptyLabel={loading ? t('common.loading') : search ? t('common.noResults') : t('inbox.empty')}
           >
             {picker.map((n) => (
               <tr key={n.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/60">
@@ -125,7 +234,7 @@ export default function FeedbackFormPage() {
                     onClick={() => navigate(`/feedback/form?challengeId=${n.codingChallengeId}`)}
                     className="rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-brand-dark"
                   >
-                    Remplir
+                    {t('feedbackForm.fill')}
                   </button>
                 </td>
               </tr>
@@ -147,7 +256,7 @@ export default function FeedbackFormPage() {
     );
   }
 
-  if (loading) return <p className="text-slate-500 dark:text-slate-400">Chargement…</p>;
+  if (loading) return <p className="text-slate-500 dark:text-slate-400">{t('common.loading')}</p>;
   if (!formData) return <p className="text-red-600 dark:text-red-400">{error || 'Formulaire introuvable.'}</p>;
 
   return (
@@ -159,51 +268,49 @@ export default function FeedbackFormPage() {
       />
       {formData.alreadySubmitted && (
         <div className="mb-4 border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Feedback déjà soumis pour ce challenge.
+          {t('feedbackForm.already')}
         </div>
       )}
       {error && <ErrorBanner message={error} />}
       <Card padded>
-        <form onSubmit={onSubmit} className="space-y-5">
+        <form onSubmit={onSubmit} className="space-y-5" noValidate>
           <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-slate-700">Note globale (0–5)</span>
+            <span className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">
+              {t('feedbackForm.globalNote')}
+            </span>
             <input
               type="number"
               min={0}
               max={5}
+              step="any"
               value={note}
               onChange={(e) => setNote(Number(e.target.value))}
-              className="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2.5"
+              className="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2.5 dark:bg-slate-800 dark:text-slate-100"
               required
             />
           </label>
           <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-slate-700">Commentaire</span>
+            <span className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">
+              {t('feedbackForm.comment')}
+            </span>
             <textarea
               value={commentaire}
               onChange={(e) => setCommentaire(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2.5"
+              className="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2.5 dark:bg-slate-800 dark:text-slate-100"
               rows={3}
             />
           </label>
           {formData.questions.map((q, i) => (
             <label key={q.id} className="block">
-              <span className="mb-1.5 block text-sm font-medium text-slate-700">
+              <span className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">
                 {q.libelle}
                 {q.obligatoire ? ' *' : ''}
+                <span className="ml-2 text-xs font-normal text-slate-400">{q.type}</span>
               </span>
-              <input
-                value={answers[i] ?? ''}
-                onChange={(e) =>
-                  setAnswers((prev) => {
-                    const next = [...prev];
-                    next[i] = e.target.value;
-                    return next;
-                  })
-                }
-                required={q.obligatoire}
-                className="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2.5"
-              />
+              {renderQuestionInput(q, i)}
+              {fieldErrors[i] && (
+                <p className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">{fieldErrors[i]}</p>
+              )}
             </label>
           ))}
           <button
@@ -211,7 +318,7 @@ export default function FeedbackFormPage() {
             disabled={saving || formData.alreadySubmitted}
             className="rounded-lg bg-brand px-5 py-2.5 font-semibold text-white hover:bg-brand-dark disabled:opacity-60"
           >
-            {saving ? 'Envoi…' : 'Soumettre'}
+            {saving ? t('feedbackForm.submitting') : t('feedbackForm.submit')}
           </button>
         </form>
       </Card>

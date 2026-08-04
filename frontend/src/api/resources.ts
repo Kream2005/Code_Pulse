@@ -160,7 +160,12 @@ export async function getQuestionsPage(page: number, size: number, q?: string, t
   return data;
 }
 
-export async function addQuestion(body: { libelle: string; type: string; obligatoire: boolean }) {
+export async function addQuestion(body: {
+  libelle: string;
+  type: string;
+  obligatoire: boolean;
+  choix?: string[];
+}) {
   const { data } = await client.post<QuestionFeedbackDto>('/questions-feedback/add-question', body);
   return data;
 }

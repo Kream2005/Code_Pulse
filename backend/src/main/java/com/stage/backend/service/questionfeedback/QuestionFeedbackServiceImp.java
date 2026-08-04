@@ -11,12 +11,16 @@ import com.stage.backend.repository.QuestionFeedbackRepository;
 import com.stage.backend.service.integrationlog.IntegrationLogService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 @Service
@@ -34,6 +38,7 @@ public class QuestionFeedbackServiceImp implements QuestionFeedbackService{
         log.info("Creating question: '{}'", request.libelle());
 
         QuestionFeedback question = mapper.toEntity(request);
+        applyChoices(question, request.type(), request.choix());
         QuestionFeedback savedQuestion = repository.save(question);
         integrationLogService.logEvent(
                 TypeLog.FEEDBACK,
@@ -56,6 +61,7 @@ public class QuestionFeedbackServiceImp implements QuestionFeedbackService{
         question.setLibelle(request.libelle());
         question.setType(request.type());
         question.setObligatoire(request.obligatoire());
+        applyChoices(question, request.type(), request.choix());
 
         QuestionFeedback updated = repository.save(question);
         integrationLogService.logEvent(
@@ -145,5 +151,37 @@ public class QuestionFeedbackServiceImp implements QuestionFeedbackService{
     @Transactional(readOnly = true)
     public boolean existsById(Long questionId) {
         return repository.existsById(questionId);
+    }
+
+    private void applyChoices(QuestionFeedback question, TypeQuestion type, List<String> rawChoix) {
+        if (type == TypeQuestion.CHOIX) {
+            List<String> cleaned = normalizeChoices(rawChoix);
+            if (cleaned.size() < 2) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "A CHOIX question requires at least 2 options"
+                );
+            }
+            question.setChoix(cleaned);
+            return;
+        }
+        question.setChoix(new ArrayList<>());
+    }
+
+    private List<String> normalizeChoices(List<String> rawChoix) {
+        if (rawChoix == null) {
+            return List.of();
+        }
+        LinkedHashSet<String> unique = new LinkedHashSet<>();
+        for (String option : rawChoix) {
+            if (option == null) {
+                continue;
+            }
+            String trimmed = option.trim();
+            if (!trimmed.isEmpty()) {
+                unique.add(trimmed);
+            }
+        }
+        return new ArrayList<>(unique);
     }
 }

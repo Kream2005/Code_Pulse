@@ -176,6 +176,16 @@ public class DemoDataSeeder implements ApplicationRunner {
             questionFeedbackRepository.saveAll(batch);
             log.info("Demo questions seeded (+{})", batch.size());
         }
+        // Backfill CHOIX options on older seeded questions that had none.
+        List<QuestionFeedback> missingChoix = questionFeedbackRepository.findBySupprimeFalse().stream()
+                .filter(q -> q.getType() == TypeQuestion.CHOIX)
+                .filter(q -> q.getChoix() == null || q.getChoix().isEmpty())
+                .peek(q -> q.setChoix(defaultChoicesFor(q.getLibelle())))
+                .toList();
+        if (!missingChoix.isEmpty()) {
+            questionFeedbackRepository.saveAll(missingChoix);
+            log.info("Demo CHOIX options backfilled (+{})", missingChoix.size());
+        }
     }
 
     private List<Utilisateur> seedCandidates() {
@@ -353,7 +363,21 @@ public class DemoDataSeeder implements ApplicationRunner {
         q.setLibelle(libelle);
         q.setType(type);
         q.setObligatoire(obligatoire);
+        if (type == TypeQuestion.CHOIX) {
+            q.setChoix(defaultChoicesFor(libelle));
+        }
         return q;
+    }
+
+    private List<String> defaultChoicesFor(String libelle) {
+        String key = libelle == null ? "" : libelle.toLowerCase();
+        if (key.contains("recommend") || key.contains("enjoy") || key.contains("retry") || key.contains("helpful") || key.contains("accurate")) {
+            return List.of("Yes", "No", "Partially");
+        }
+        if (key.contains("finish") || key.contains("on time")) {
+            return List.of("Yes", "No", "Almost");
+        }
+        return List.of("Yes", "No", "Not sure");
     }
 
     private void ensureNotification(Utilisateur user, CodingChallenge challenge, StatutNotification statut) {

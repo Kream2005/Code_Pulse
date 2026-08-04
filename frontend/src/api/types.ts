@@ -56,6 +56,7 @@ export interface QuestionFeedback {
   libelle: string;
   type: string;
   obligatoire: boolean;
+  choix?: string[] | null;
 }
 
 export interface FeedbackFormResponse {
@@ -117,6 +118,7 @@ export interface QuestionFeedbackDto {
   libelle: string;
   type: string;
   obligatoire: boolean;
+  choix?: string[] | null;
 }
 
 export interface MeResponse {
