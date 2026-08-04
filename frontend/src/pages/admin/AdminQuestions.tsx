@@ -69,7 +69,7 @@ export default function AdminQuestions() {
     <div>
       <PageHeader title="Questions" subtitle="Questions du formulaire de feedback." />
       {error && <ErrorBanner message={error} />}
-      <Card padded className="mb-6">
+      <Card padded className="mb-5">
         <form onSubmit={onAdd} className="flex flex-wrap gap-3">
           <input
             className="min-w-[220px] flex-1 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2"
@@ -104,7 +104,7 @@ export default function AdminQuestions() {
         </form>
       </Card>
       <Card>
-        <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-5 py-3 dark:border-slate-700">
+        <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-4 py-2.5 dark:border-slate-700">
           <SearchInput value={search} onChange={onSearchChange} className="max-w-xs" />
           <FilterSelect
             value={typeFilter}
@@ -122,10 +122,10 @@ export default function AdminQuestions() {
         >
           {items.map((q) => (
             <tr key={q.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/60">
-              <td className="px-5 py-3.5 font-medium">{q.libelle}</td>
-              <td className="px-5 py-3.5 text-slate-600 dark:text-slate-300">{q.type}</td>
-              <td className="px-5 py-3.5 text-slate-600 dark:text-slate-300">{q.obligatoire ? 'Oui' : 'Non'}</td>
-              <td className="px-5 py-3.5">
+              <td className="px-4 py-3 font-medium">{q.libelle}</td>
+              <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{q.type}</td>
+              <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{q.obligatoire ? 'Oui' : 'Non'}</td>
+              <td className="px-4 py-3">
                 <button
                   type="button"
                   onClick={async () => {

@@ -23,7 +23,7 @@ export default function FormField({
   const isPassword = type === 'password';
 
   return (
-    <label className="mb-5 block">
+    <label className="mb-4 block">
       <span className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">
         {label}
       </span>
@@ -38,7 +38,7 @@ export default function FormField({
           required
           minLength={minLength}
           placeholder={placeholder}
-          className={`w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-11 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 ${
+          className={`w-full rounded-lg border border-slate-300 bg-white py-2 pl-11 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 ${
             isPassword ? 'pr-11' : 'pr-3.5'
           }`}
         />

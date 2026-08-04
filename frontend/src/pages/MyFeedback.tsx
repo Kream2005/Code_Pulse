@@ -50,7 +50,7 @@ export default function MyFeedback() {
       <PageHeader title={t('myFeedback.title')} subtitle={t('myFeedback.subtitle')} />
       {error && <p className="mb-4 text-red-600 dark:text-red-400">{error}</p>}
       <Card>
-        <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-5 py-3 dark:border-slate-700">
+        <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-4 py-2.5 dark:border-slate-700">
           <SearchInput
             value={search}
             onChange={onSearchChange}
@@ -72,23 +72,23 @@ export default function MyFeedback() {
         >
           {items.map((f) => (
             <tr key={f.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/60">
-              <td className="px-5 py-3.5 text-slate-600 dark:text-slate-300">{f.id}</td>
-              <td className="px-5 py-3.5 font-medium text-slate-800 dark:text-slate-100">
+              <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{f.id}</td>
+              <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-100">
                 {f.challengeTitre ?? `#${f.codingChallengeId}`}
                 {f.challengeSupprime ? (
                   <span className="ml-2 text-xs text-amber-600">{t('common.archived')}</span>
                 ) : null}
               </td>
-              <td className="px-5 py-3.5 text-slate-600 dark:text-slate-300">
+              <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                 {f.noteGlobale != null ? `${f.noteGlobale} / 5` : '—'}
               </td>
-              <td className="px-5 py-3.5">
+              <td className="px-4 py-3">
                 <StatusBadge status={f.statut} />
               </td>
-              <td className="px-5 py-3.5 text-slate-500 dark:text-slate-400">
+              <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                 {f.createdAt ? new Date(f.createdAt).toLocaleDateString() : '—'}
               </td>
-              <td className="px-5 py-3.5">
+              <td className="px-4 py-3">
                 <Link
                   to={`/feedback/form?challengeId=${f.codingChallengeId}`}
                   className="text-xs font-semibold text-brand hover:text-brand-dark"

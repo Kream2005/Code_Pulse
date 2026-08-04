@@ -20,7 +20,7 @@ export default function Pagination({
   const { t } = useI18n();
   const safeTotal = Math.max(totalPages, 1);
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-white px-5 py-3 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
       <p>
         {totalElements} {t('common.items')} · {t('common.page')} {page + 1} / {safeTotal}
       </p>

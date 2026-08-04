@@ -63,7 +63,7 @@ export default function AdminDashboard() {
       <PageHeader title={t('admin.title')} subtitle={t('admin.subtitle')} />
 
       {showChallengeStrip && challengeKpi && (
-        <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <StatCard label={t('admin.kpiChallengesActive')} value={challengeKpi.challengesActifs} />
           <StatCard label={t('admin.kpiChallengesArchived')} value={challengeKpi.challengesArchives} />
           <StatCard label={t('admin.kpiNotifications')} value={challengeKpi.notificationsTotal} />
@@ -82,7 +82,7 @@ export default function AdminDashboard() {
       )}
 
       {showManagerStrip && managerKpi && (
-        <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <StatCard
             label={t('admin.participation')}
             value={fmtPct(managerKpi.tauxParticipation)}
@@ -105,7 +105,7 @@ export default function AdminDashboard() {
       )}
 
       {showAppStrip && appKpi && (
-        <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <StatCard label={t('admin.kpiStaff')} value={appKpi.utilisateursStaff} />
           <StatCard label={t('admin.kpiCandidates')} value={appKpi.utilisateursCandidats} />
           <StatCard label={t('admin.kpiQuestions')} value={appKpi.questionsActives} />
@@ -134,7 +134,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2">
         {canManageUsers() && (
           <NavCard to="/admin/users" title={t('admin.usersCard')} subtitle={t('admin.usersCardSub')} />
         )}

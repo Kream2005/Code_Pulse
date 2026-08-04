@@ -12,7 +12,7 @@ export default function NavCard({
   return (
     <Link
       to={to}
-      className="group flex items-center justify-between rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:border-brand hover:shadow dark:border-slate-700 dark:bg-slate-900"
+      className="group flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-brand hover:shadow dark:border-slate-700 dark:bg-slate-900"
     >
       <div>
         <p className="font-semibold text-slate-800 dark:text-slate-100">{title}</p>

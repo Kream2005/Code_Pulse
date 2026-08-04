@@ -21,8 +21,8 @@ export default function SidebarLink({
       end={end}
       title={collapsed ? label : undefined}
       className={({ isActive }) =>
-        `mx-1 my-1 flex items-center rounded-lg py-3 text-sm font-medium transition-colors ${
-          collapsed ? 'justify-center px-0' : 'gap-3 px-[22px]'
+        `mx-1 my-0.5 flex items-center rounded-lg py-2.5 text-sm font-medium transition-colors ${
+          collapsed ? 'justify-center px-0' : 'gap-3 px-4'
         } ${
           isActive
             ? 'bg-brand text-white'

@@ -9,11 +9,11 @@ export default function SidebarBrand({
 }) {
   const { t } = useI18n();
   return (
-    <div className="relative flex h-30 flex-col items-center gap-2 px-3 py-5">
+    <div className="relative flex h-24 flex-col items-center gap-1.5 px-3 py-4">
       <img
         src={collapsed ? '/flower-logo.png' : '/logo.png'}
         alt={t('appName')}
-        className={collapsed ? 'h-8 w-auto dark:brightness-0 dark:invert' : 'h-10 w-auto dark:brightness-0 dark:invert'}
+        className={collapsed ? 'h-7 w-auto dark:brightness-0 dark:invert' : 'h-9 w-auto dark:brightness-0 dark:invert'}
       />
       <span className="text-lg font-semibold text-slate-800 dark:text-slate-100">
         {collapsed ? 'CP' : t('appName')}

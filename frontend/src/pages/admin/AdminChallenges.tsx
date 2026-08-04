@@ -114,7 +114,7 @@ export default function AdminChallenges() {
         </div>
       )}
       <Card>
-        <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-5 py-3 dark:border-slate-700">
+        <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-4 py-2.5 dark:border-slate-700">
           <SearchInput value={search} onChange={onSearchChange} className="max-w-xs" />
         </div>
         <Table
@@ -130,13 +130,13 @@ export default function AdminChallenges() {
         >
           {items.map((c) => (
             <tr key={c.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/60">
-              <td className="px-5 py-3.5 font-medium text-slate-800 dark:text-slate-100">{c.titre}</td>
-              <td className="px-5 py-3.5 text-slate-600 dark:text-slate-300">{c.tag}</td>
-              <td className="px-5 py-3.5 text-slate-600 dark:text-slate-300">{c.duree}</td>
-              <td className="px-5 py-3.5 text-slate-500 dark:text-slate-400">
+              <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-100">{c.titre}</td>
+              <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{c.tag}</td>
+              <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{c.duree}</td>
+              <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                 {c.dateCompletion ? new Date(c.dateCompletion).toLocaleDateString('fr-FR') : '—'}
               </td>
-              <td className="px-5 py-3.5">
+              <td className="px-4 py-3">
                 <button
                   type="button"
                   disabled={archivingId === c.id}

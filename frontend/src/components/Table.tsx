@@ -18,7 +18,7 @@ export default function Table({
       <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
         <tr>
           {columns.map((c) => (
-            <th key={c} className="px-5 py-3 font-medium">
+            <th key={c} className="px-4 py-2.5 font-medium">
               {c}
             </th>
           ))}

@@ -95,7 +95,7 @@ export default function AdminAnalytics() {
   return (
     <div>
       <PageHeader title={t('admin.analyticsTitle')} subtitle={t('admin.analyticsSubtitle')} />
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <StatCard
           label={t('admin.participation')}
           value={fmtPct(kpi?.tauxParticipation)}
@@ -116,12 +116,12 @@ export default function AdminAnalytics() {
         <StatCard label={t('admin.kpiTags')} value={kpi?.tagsCouverts ?? '—'} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         <Card>
-          <div className="border-b border-slate-200 px-5 py-3 text-sm font-semibold text-slate-800 dark:border-slate-700 dark:text-slate-100">
+          <div className="border-b border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-800 dark:border-slate-700 dark:text-slate-100">
             {t('admin.scoresByTag')}
           </div>
-          <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-5 py-3 dark:border-slate-700">
+          <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-4 py-2.5 dark:border-slate-700">
             <SearchInput value={tagSearch} onChange={onTagSearchChange} className="max-w-xs" />
           </div>
           <Table
@@ -131,8 +131,8 @@ export default function AdminAnalytics() {
           >
             {pagedTags.map((row) => (
               <tr key={row.tag}>
-                <td className="px-5 py-3">{row.tag}</td>
-                <td className="px-5 py-3">{fmtScore(row.averageScore)}</td>
+                <td className="px-4 py-2.5">{row.tag}</td>
+                <td className="px-4 py-2.5">{fmtScore(row.averageScore)}</td>
               </tr>
             ))}
           </Table>
@@ -149,25 +149,25 @@ export default function AdminAnalytics() {
           />
         </Card>
         <Card>
-          <div className="border-b border-slate-200 px-5 py-3 text-sm font-semibold text-slate-800 dark:border-slate-700 dark:text-slate-100">
+          <div className="border-b border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-800 dark:border-slate-700 dark:text-slate-100">
             {t('admin.topChallenges')}
           </div>
           <Table columns={[t('inbox.challenge'), t('admin.metric')]} isEmpty={top.length === 0}>
             {top.map((row) => (
               <tr key={row.challengeId}>
-                <td className="px-5 py-3">{row.titre}</td>
-                <td className="px-5 py-3">{fmtScore(row.metricValue)}</td>
+                <td className="px-4 py-2.5">{row.titre}</td>
+                <td className="px-4 py-2.5">{fmtScore(row.metricValue)}</td>
               </tr>
             ))}
           </Table>
         </Card>
       </div>
 
-      <Card className="mt-6">
-        <div className="border-b border-slate-200 px-5 py-3 text-sm font-semibold text-slate-800 dark:border-slate-700 dark:text-slate-100">
+      <Card className="mt-5">
+        <div className="border-b border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-800 dark:border-slate-700 dark:text-slate-100">
           {t('admin.statsByChallenge')}
         </div>
-        <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-5 py-3 dark:border-slate-700">
+        <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-4 py-2.5 dark:border-slate-700">
           <SearchInput value={statsSearch} onChange={onStatsSearchChange} className="max-w-xs" />
         </div>
         <Table
@@ -177,9 +177,9 @@ export default function AdminAnalytics() {
         >
           {stats.map((s) => (
             <tr key={s.challengeId}>
-              <td className="px-5 py-3">{s.titre}</td>
-              <td className="px-5 py-3">{fmtScore(s.averageScore)}</td>
-              <td className="px-5 py-3">{s.feedbackCount}</td>
+              <td className="px-4 py-2.5">{s.titre}</td>
+              <td className="px-4 py-2.5">{fmtScore(s.averageScore)}</td>
+              <td className="px-4 py-2.5">{s.feedbackCount}</td>
             </tr>
           ))}
         </Table>

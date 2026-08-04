@@ -91,7 +91,7 @@ export default function AdminUsers() {
         </div>
       )}
 
-      <Card padded className="mb-6">
+      <Card padded className="mb-5">
         <h3 className="mb-4 text-lg font-semibold text-slate-800 dark:text-slate-100">Créer un compte</h3>
         <form onSubmit={onCreate} className="grid gap-3 sm:grid-cols-2">
           <input
@@ -146,7 +146,7 @@ export default function AdminUsers() {
       </Card>
 
       <Card>
-        <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-5 py-3 dark:border-slate-700">
+        <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-4 py-2.5 dark:border-slate-700">
           <SearchInput
             value={search}
             onChange={onSearchChange}
@@ -167,12 +167,12 @@ export default function AdminUsers() {
         >
           {items.map((u) => (
             <tr key={u.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/60">
-              <td className="px-5 py-3.5 font-medium">
+              <td className="px-4 py-3 font-medium">
                 {u.prenom} {u.nom}
               </td>
-              <td className="px-5 py-3.5 text-slate-600 dark:text-slate-300">{u.email}</td>
-              <td className="px-5 py-3.5 text-slate-600 dark:text-slate-300">{u.role}</td>
-              <td className="px-5 py-3.5">
+              <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{u.email}</td>
+              <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{u.role}</td>
+              <td className="px-4 py-3">
                 <button
                   type="button"
                   onClick={() => onDelete(u)}

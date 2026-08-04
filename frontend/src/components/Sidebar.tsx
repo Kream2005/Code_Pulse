@@ -167,11 +167,11 @@ export default function Sidebar() {
   return (
     <aside
       className={`sticky top-0 z-20 flex h-screen shrink-0 flex-col border-r border-slate-200 bg-white transition-[width] duration-300 ease-in-out dark:border-slate-700 dark:bg-slate-900 ${
-        collapsed ? 'w-16' : 'w-60'
+        collapsed ? 'w-16' : 'w-56'
       }`}
     >
       <SidebarBrand collapsed={collapsed} onToggle={toggle} />
-      <nav className="flex flex-1 flex-col overflow-y-auto py-3">
+      <nav className="flex flex-1 flex-col overflow-y-auto py-2">
         {items.map((item) => (
           <SidebarLink key={item.to} {...item} collapsed={collapsed} />
         ))}

@@ -12,7 +12,7 @@ export default function Card({
   return (
     <div
       className={`rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900 ${
-        padded ? 'p-6' : 'overflow-hidden'
+        padded ? 'p-5' : 'overflow-hidden'
       } ${className}`}
     >
       {children}

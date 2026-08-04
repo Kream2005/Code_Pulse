@@ -13,7 +13,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           className="pointer-events-none absolute -bottom-10 -right-10 w-200 select-none opacity-[0.5] dark:opacity-[0.15] dark:brightness-0 dark:invert"
         />
         <Header />
-        <main className="relative flex-1 overflow-y-auto p-8 text-slate-800 dark:text-slate-100">
+        <main className="relative flex-1 overflow-y-auto p-6 text-slate-800 dark:text-slate-100">
           {children}
         </main>
       </div>

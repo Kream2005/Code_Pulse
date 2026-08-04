@@ -73,7 +73,7 @@ export default function AdminLogs() {
       <PageHeader title="Logs d'intégration" subtitle="Supervision technique." />
       {error && <ErrorBanner message={error} />}
       <Card>
-        <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-5 py-3 dark:border-slate-700">
+        <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-4 py-2.5 dark:border-slate-700">
           <SearchInput value={search} onChange={onSearchChange} className="max-w-xs" />
           <FilterSelect
             value={typeFilter}
@@ -97,14 +97,14 @@ export default function AdminLogs() {
         >
           {items.map((l) => (
             <tr key={l.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/60">
-              <td className="px-5 py-3.5 font-medium">{l.type}</td>
-              <td className="px-5 py-3.5">
+              <td className="px-4 py-3 font-medium">{l.type}</td>
+              <td className="px-4 py-3">
                 <StatusBadge status={l.statut} />
               </td>
-              <td className="max-w-md truncate px-5 py-3.5 text-slate-600 dark:text-slate-300" title={l.message}>
+              <td className="max-w-md truncate px-4 py-3 text-slate-600 dark:text-slate-300" title={l.message}>
                 {l.message}
               </td>
-              <td className="px-5 py-3.5 text-slate-500 dark:text-slate-400">
+              <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                 {l.date ? new Date(l.date).toLocaleString('fr-FR') : '—'}
               </td>
             </tr>
