@@ -62,15 +62,22 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
             LEFT JOIN n.utilisateur u
             LEFT JOIN n.codingChallenge c
             WHERE (:statut IS NULL OR n.statut = :statut)
+            AND (:tag IS NULL OR :tag = '' OR LOWER(c.tag) = LOWER(:tag))
             AND (
                 :keyword IS NULL OR :keyword = ''
                 OR LOWER(c.titre) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(c.tag) LIKE LOWER(CONCAT('%', :keyword, '%'))
                 OR LOWER(u.nom) LIKE LOWER(CONCAT('%', :keyword, '%'))
                 OR LOWER(u.prenom) LIKE LOWER(CONCAT('%', :keyword, '%'))
                 OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
             )
             """)
-    Page<Notification> search(@Param("keyword") String keyword, @Param("statut") StatutNotification statut, Pageable pageable);
+    Page<Notification> search(
+            @Param("keyword") String keyword,
+            @Param("statut") StatutNotification statut,
+            @Param("tag") String tag,
+            Pageable pageable
+    );
 
     @EntityGraph(attributePaths = {"codingChallenge", "utilisateur"})
     @Query("""
@@ -79,12 +86,18 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
             WHERE n.supprime = false
             AND n.utilisateur.id = :utilisateurId
             AND (:statut IS NULL OR n.statut = :statut)
-            AND (:keyword IS NULL OR :keyword = '' OR LOWER(c.titre) LIKE LOWER(CONCAT('%', :keyword, '%')))
+            AND (:tag IS NULL OR :tag = '' OR LOWER(c.tag) = LOWER(:tag))
+            AND (
+                :keyword IS NULL OR :keyword = ''
+                OR LOWER(c.titre) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(c.tag) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            )
             """)
     Page<Notification> searchByUtilisateur(
             @Param("utilisateurId") Long utilisateurId,
             @Param("keyword") String keyword,
             @Param("statut") StatutNotification statut,
+            @Param("tag") String tag,
             Pageable pageable
     );
 }

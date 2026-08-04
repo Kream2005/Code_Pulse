@@ -24,7 +24,7 @@ public interface FeedbackService {
 
     Page<FeedbackResponse> getFeedbacksPage(int page, int size);
 
-    Page<FeedbackResponse> searchFeedbacks(String keyword, StatutFeedback statut, int page, int size);
+    Page<FeedbackResponse> searchFeedbacks(String keyword, StatutFeedback statut, String tag, int page, int size);
 
     List<FeedbackResponse> getFeedbacksByStatut(StatutFeedback statutFeedback);
 
@@ -37,7 +37,7 @@ public interface FeedbackService {
     Page<FeedbackResponse> getFeedbacksByUtilisateurPage(Long utilisateurId, int page, int size);
 
     Page<FeedbackResponse> searchFeedbacksByUtilisateur(
-            Long utilisateurId, String keyword, StatutFeedback statut, int page, int size
+            Long utilisateurId, String keyword, StatutFeedback statut, String tag, int page, int size
     );
 
     List<FeedbackResponse> getFeedbacksByCreatedAt(ZonedDateTime createdAt);

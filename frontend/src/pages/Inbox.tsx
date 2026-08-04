@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Card from '../components/Card';
+import FilterSelect from '../components/FilterSelect';
 import PageHeader from '../components/PageHeader';
 import Pagination from '../components/Pagination';
 import SearchInput from '../components/SearchInput';
@@ -9,6 +10,7 @@ import StatusBadge from '../components/StatusBadge';
 import Table from '../components/Table';
 import { getUserId } from '../auth';
 import {
+  getChallengeTags,
   getNotificationsByUserPage,
   getNotificationsPage,
   getUserDashboardKpis,
@@ -16,6 +18,8 @@ import {
 } from '../api/resources';
 import type { NotificationDto, UserDashboardKpi } from '../api/types';
 import { useI18n } from '../i18n/I18nContext';
+
+const NOTIF_STATUSES = ['EN_ATTENTE', 'ENVOYEE', 'LUE', 'ECHEC'];
 
 export default function Inbox({ admin = false }: { admin?: boolean }) {
   const { t } = useI18n();
@@ -27,6 +31,8 @@ export default function Inbox({ admin = false }: { admin?: boolean }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [statut, setStatut] = useState('');
+  const [tag, setTag] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
   const [search, setSearch] = useState('');
   const [kpi, setKpi] = useState<UserDashboardKpi | null>(null);
 
@@ -37,14 +43,27 @@ export default function Inbox({ admin = false }: { admin?: boolean }) {
   }, [admin]);
 
   useEffect(() => {
+    getChallengeTags()
+      .then(setTags)
+      .catch(() => setTags([]));
+  }, []);
+
+  useEffect(() => {
     setLoading(true);
     setError('');
     const load = admin
-      ? getNotificationsPage(page, size, statut || undefined, search || undefined)
+      ? getNotificationsPage(page, size, statut || undefined, search || undefined, tag || undefined)
       : (() => {
           const uid = getUserId();
           if (!uid) return Promise.reject(new Error(t('common.errorGeneric')));
-          return getNotificationsByUserPage(uid, page, size, search || undefined, statut || undefined);
+          return getNotificationsByUserPage(
+            uid,
+            page,
+            size,
+            search || undefined,
+            statut || undefined,
+            tag || undefined
+          );
         })();
 
     load
@@ -57,11 +76,21 @@ export default function Inbox({ admin = false }: { admin?: boolean }) {
         setError(err.response?.data?.message ?? err.message ?? t('common.errorGeneric'));
       })
       .finally(() => setLoading(false));
-  }, [admin, page, size, statut, search, t]);
+  }, [admin, page, size, statut, tag, search, t]);
 
   function onSearchChange(value: string) {
     setPage(0);
     setSearch(value);
+  }
+
+  function onStatutChange(value: string) {
+    setPage(0);
+    setStatut(value);
+  }
+
+  function onTagChange(value: string) {
+    setPage(0);
+    setTag(value);
   }
 
   async function markRead(n: NotificationDto) {
@@ -70,29 +99,13 @@ export default function Inbox({ admin = false }: { admin?: boolean }) {
     setItems((prev) => prev.map((x) => (x.id === n.id ? { ...x, statut: 'LUE' } : x)));
   }
 
+  const hasFilters = Boolean(search || statut || tag);
+
   return (
     <div>
       <PageHeader
         title={admin ? t('inbox.adminTitle') : t('inbox.title')}
         subtitle={t('inbox.subtitle')}
-        action={
-          admin ? (
-            <select
-              value={statut}
-              onChange={(e) => {
-                setPage(0);
-                setStatut(e.target.value);
-              }}
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-            >
-              <option value="">{t('common.allStatuses')}</option>
-              <option value="EN_ATTENTE">EN_ATTENTE</option>
-              <option value="ENVOYEE">ENVOYEE</option>
-              <option value="LUE">LUE</option>
-              <option value="ECHEC">ECHEC</option>
-            </select>
-          ) : undefined
-        }
       />
       {!admin && kpi && (
         <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -118,6 +131,18 @@ export default function Inbox({ admin = false }: { admin?: boolean }) {
             placeholder={t('common.searchPlaceholder')}
             className="max-w-xs"
           />
+          <FilterSelect
+            value={statut}
+            onChange={onStatutChange}
+            allLabel={t('common.allStatuses')}
+            options={NOTIF_STATUSES.map((s) => ({ value: s, label: s }))}
+          />
+          <FilterSelect
+            value={tag}
+            onChange={onTagChange}
+            allLabel={t('common.allTags')}
+            options={tags.map((tg) => ({ value: tg, label: tg }))}
+          />
         </div>
         <Table
           columns={[
@@ -128,7 +153,7 @@ export default function Inbox({ admin = false }: { admin?: boolean }) {
             t('common.action'),
           ]}
           isEmpty={loading || items.length === 0}
-          emptyLabel={loading ? t('common.loading') : search ? t('common.noResults') : t('inbox.empty')}
+          emptyLabel={loading ? t('common.loading') : hasFilters ? t('common.noResults') : t('inbox.empty')}
         >
           {items.map((n) => (
             <tr key={n.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/60">

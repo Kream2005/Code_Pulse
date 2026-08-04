@@ -66,9 +66,10 @@ public class FeedbackRestController {
             @RequestParam int page,
             @RequestParam int size,
             @RequestParam(required = false) String q,
-            @RequestParam(required = false) StatutFeedback statut
+            @RequestParam(required = false) StatutFeedback statut,
+            @RequestParam(required = false) String tag
     ) {
-        return ResponseEntity.ok(service.searchFeedbacks(q, statut, page, size));
+        return ResponseEntity.ok(service.searchFeedbacks(q, statut, tag, page, size));
     }
 
     @GetMapping("/get-feedback-by-statut")
@@ -114,13 +115,14 @@ public class FeedbackRestController {
             @RequestParam int page,
             @RequestParam int size,
             @RequestParam(required = false) String q,
-            @RequestParam(required = false) StatutFeedback statut
+            @RequestParam(required = false) StatutFeedback statut,
+            @RequestParam(required = false) String tag
     ) {
         Long currentUserId = JwtUtils.getCurrentUserId();
         if (!utilisateurId.equals(currentUserId) && !hasReadFeedbackRole()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
-        return ResponseEntity.ok(service.searchFeedbacksByUtilisateur(utilisateurId, q, statut, page, size));
+        return ResponseEntity.ok(service.searchFeedbacksByUtilisateur(utilisateurId, q, statut, tag, page, size));
     }
 
     @GetMapping("/get-feedback-by-created-at")

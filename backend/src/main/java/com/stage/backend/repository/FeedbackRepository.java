@@ -48,6 +48,7 @@ public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
             LEFT JOIN f.utilisateur u
             WHERE f.supprime = false
             AND (:statut IS NULL OR f.statutFeedback = :statut)
+            AND (:tag IS NULL OR :tag = '' OR LOWER(f.challengeTag) = LOWER(:tag))
             AND (
                 :keyword IS NULL OR :keyword = ''
                 OR LOWER(f.commentaire) LIKE LOWER(CONCAT('%', :keyword, '%'))
@@ -58,13 +59,19 @@ public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
                 OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
             )
             """)
-    Page<Feedback> search(@Param("keyword") String keyword, @Param("statut") StatutFeedback statut, Pageable pageable);
+    Page<Feedback> search(
+            @Param("keyword") String keyword,
+            @Param("statut") StatutFeedback statut,
+            @Param("tag") String tag,
+            Pageable pageable
+    );
 
     @Query("""
             SELECT f FROM feedback f
             WHERE f.supprime = false
             AND f.utilisateur.id = :utilisateurId
             AND (:statut IS NULL OR f.statutFeedback = :statut)
+            AND (:tag IS NULL OR :tag = '' OR LOWER(f.challengeTag) = LOWER(:tag))
             AND (
                 :keyword IS NULL OR :keyword = ''
                 OR LOWER(f.commentaire) LIKE LOWER(CONCAT('%', :keyword, '%'))
@@ -76,6 +83,7 @@ public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
             @Param("utilisateurId") Long utilisateurId,
             @Param("keyword") String keyword,
             @Param("statut") StatutFeedback statut,
+            @Param("tag") String tag,
             Pageable pageable
     );
 }

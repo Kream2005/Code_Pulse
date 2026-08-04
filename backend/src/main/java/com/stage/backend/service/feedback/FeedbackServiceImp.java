@@ -313,9 +313,13 @@ public class FeedbackServiceImp implements FeedbackService {
     }
 
     @Override
-    public Page<FeedbackResponse> searchFeedbacks(String keyword, StatutFeedback statut, int page, int size) {
+    public Page<FeedbackResponse> searchFeedbacks(
+            String keyword, StatutFeedback statut, String tag, int page, int size
+    ) {
         String normalized = keyword == null ? "" : keyword.trim();
-        return repository.search(normalized, statut, PageRequest.of(page, size)).map(mapper::toResponseDto);
+        String normalizedTag = tag == null ? "" : tag.trim();
+        return repository.search(normalized, statut, normalizedTag, PageRequest.of(page, size))
+                .map(mapper::toResponseDto);
     }
 
     @Override
@@ -351,10 +355,12 @@ public class FeedbackServiceImp implements FeedbackService {
 
     @Override
     public Page<FeedbackResponse> searchFeedbacksByUtilisateur(
-            Long utilisateurId, String keyword, StatutFeedback statut, int page, int size
+            Long utilisateurId, String keyword, StatutFeedback statut, String tag, int page, int size
     ) {
         String normalized = keyword == null ? "" : keyword.trim();
-        return repository.searchByUtilisateur(utilisateurId, normalized, statut, PageRequest.of(page, size))
+        String normalizedTag = tag == null ? "" : tag.trim();
+        return repository
+                .searchByUtilisateur(utilisateurId, normalized, statut, normalizedTag, PageRequest.of(page, size))
                 .map(mapper::toResponseDto);
     }
 

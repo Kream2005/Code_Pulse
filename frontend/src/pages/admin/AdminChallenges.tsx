@@ -1,11 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
 import Card from '../../components/Card';
 import ErrorBanner from '../../components/ErrorBanner';
+import FilterSelect from '../../components/FilterSelect';
 import PageHeader from '../../components/PageHeader';
 import Pagination from '../../components/Pagination';
 import SearchInput from '../../components/SearchInput';
 import Table from '../../components/Table';
-import { deleteChallenge, getChallengesPage, syncChallenges } from '../../api/resources';
+import {
+  deleteChallenge,
+  getChallengeTags,
+  getChallengesPage,
+  syncChallenges,
+} from '../../api/resources';
 import type { CodingChallengeDto } from '../../api/types';
 import { useI18n } from '../../i18n/I18nContext';
 
@@ -22,12 +28,20 @@ export default function AdminChallenges() {
   const [archivingId, setArchivingId] = useState<number | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [search, setSearch] = useState('');
+  const [tag, setTag] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+
+  useEffect(() => {
+    getChallengeTags()
+      .then(setTags)
+      .catch(() => setTags([]));
+  }, []);
 
   const reload = useCallback(
     (opts?: { quiet?: boolean }) => {
       if (!opts?.quiet) setLoading(true);
       setError('');
-      return getChallengesPage(page, size, search)
+      return getChallengesPage(page, size, search || undefined, tag || undefined)
         .then((data) => {
           setItems(data.content);
           setTotalPages(data.totalPages);
@@ -39,7 +53,7 @@ export default function AdminChallenges() {
         .catch((err) => setError(err.response?.data?.message ?? 'Chargement impossible.'))
         .finally(() => setLoading(false));
     },
-    [page, size, search]
+    [page, size, search, tag]
   );
 
   useEffect(() => {
@@ -49,6 +63,11 @@ export default function AdminChallenges() {
   function onSearchChange(value: string) {
     setPage(0);
     setSearch(value);
+  }
+
+  function onTagChange(value: string) {
+    setPage(0);
+    setTag(value);
   }
 
   async function onSync() {
@@ -116,6 +135,12 @@ export default function AdminChallenges() {
       <Card>
         <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-4 py-2.5 dark:border-slate-700">
           <SearchInput value={search} onChange={onSearchChange} className="max-w-xs" />
+          <FilterSelect
+            value={tag}
+            onChange={onTagChange}
+            allLabel={t('common.allTags')}
+            options={tags.map((tg) => ({ value: tg, label: tg }))}
+          />
         </div>
         <Table
           columns={[
@@ -126,7 +151,13 @@ export default function AdminChallenges() {
             t('common.action'),
           ]}
           isEmpty={!loading && items.length === 0}
-          emptyLabel={loading ? t('common.loading') : search ? t('common.noResults') : t('common.empty')}
+          emptyLabel={
+            loading
+              ? t('common.loading')
+              : search || tag
+                ? t('common.noResults')
+                : t('common.empty')
+          }
         >
           {items.map((c) => (
             <tr key={c.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/60">

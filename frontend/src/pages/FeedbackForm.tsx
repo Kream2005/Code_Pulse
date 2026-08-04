@@ -2,18 +2,22 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Card from '../components/Card';
 import ErrorBanner from '../components/ErrorBanner';
+import FilterSelect from '../components/FilterSelect';
 import PageHeader from '../components/PageHeader';
 import Pagination from '../components/Pagination';
 import SearchInput from '../components/SearchInput';
 import Table from '../components/Table';
 import { getUserId } from '../auth';
 import {
+  getChallengeTags,
   getFeedbackForm,
   getNotificationsByUserPage,
   submitFeedback,
 } from '../api/resources';
 import type { FeedbackFormResponse, NotificationDto, QuestionFeedback } from '../api/types';
 import { useI18n } from '../i18n/I18nContext';
+
+const NOTIF_STATUSES = ['EN_ATTENTE', 'ENVOYEE', 'LUE', 'ECHEC'];
 
 /** While typing, allow incomplete decimals like "5." or ".5". */
 function isNoteDraft(value: string): boolean {
@@ -56,6 +60,16 @@ export default function FeedbackFormPage() {
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [search, setSearch] = useState('');
+  const [statut, setStatut] = useState('');
+  const [tag, setTag] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (challengeId) return;
+    getChallengeTags()
+      .then(setTags)
+      .catch(() => setTags([]));
+  }, [challengeId]);
 
   useEffect(() => {
     if (challengeId) {
@@ -78,7 +92,14 @@ export default function FeedbackFormPage() {
       return;
     }
     setLoading(true);
-    getNotificationsByUserPage(uid, page, size, search || undefined)
+    getNotificationsByUserPage(
+      uid,
+      page,
+      size,
+      search || undefined,
+      statut || undefined,
+      tag || undefined
+    )
       .then((data) => {
         setPicker(data.content);
         setTotalPages(data.totalPages);
@@ -86,11 +107,21 @@ export default function FeedbackFormPage() {
       })
       .catch((err) => setError(err.response?.data?.message ?? 'Chargement impossible.'))
       .finally(() => setLoading(false));
-  }, [challengeId, page, size, search]);
+  }, [challengeId, page, size, search, statut, tag]);
 
   function onSearchChange(value: string) {
     setPage(0);
     setSearch(value);
+  }
+
+  function onStatutChange(value: string) {
+    setPage(0);
+    setStatut(value);
+  }
+
+  function onTagChange(value: string) {
+    setPage(0);
+    setTag(value);
   }
 
   function setAnswer(index: number, value: string, question: QuestionFeedback) {
@@ -239,11 +270,29 @@ export default function FeedbackFormPage() {
         <Card>
           <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-4 py-2.5 dark:border-slate-700">
             <SearchInput value={search} onChange={onSearchChange} className="max-w-xs" />
+            <FilterSelect
+              value={statut}
+              onChange={onStatutChange}
+              allLabel={t('common.allStatuses')}
+              options={NOTIF_STATUSES.map((s) => ({ value: s, label: s }))}
+            />
+            <FilterSelect
+              value={tag}
+              onChange={onTagChange}
+              allLabel={t('common.allTags')}
+              options={tags.map((tg) => ({ value: tg, label: tg }))}
+            />
           </div>
           <Table
             columns={[t('inbox.challenge'), t('inbox.tag'), t('common.action')]}
             isEmpty={loading || picker.length === 0}
-            emptyLabel={loading ? t('common.loading') : search ? t('common.noResults') : t('inbox.empty')}
+            emptyLabel={
+              loading
+                ? t('common.loading')
+                : search || statut || tag
+                  ? t('common.noResults')
+                  : t('inbox.empty')
+            }
           >
             {picker.map((n) => (
               <tr key={n.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/60">

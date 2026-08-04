@@ -20,7 +20,7 @@ public interface NotificationService {
     Page<NotificationDto> getNotificationsByUtilisateurPage(Long utilisateurId, int page, int size);
 
     Page<NotificationDto> searchNotificationsByUtilisateur(
-            Long utilisateurId, String keyword, StatutNotification statut, int page, int size
+            Long utilisateurId, String keyword, StatutNotification statut, String tag, int page, int size
     );
 
     List<NotificationDto> getAllNotifications();
@@ -31,7 +31,9 @@ public interface NotificationService {
 
     Page<NotificationDto> getNotificationsByStatutPage(StatutNotification statut, int page, int size);
 
-    Page<NotificationDto> searchNotifications(String keyword, StatutNotification statut, int page, int size);
+    Page<NotificationDto> searchNotifications(
+            String keyword, StatutNotification statut, String tag, int page, int size
+    );
 
     boolean changerStatut(Long notificationId, StatutNotification statut);
 

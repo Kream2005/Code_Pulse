@@ -146,6 +146,12 @@ public class CodingChallengeServiceImp implements CodingChallengeService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<String> getDistinctTags() {
+        return codingChallengeRepository.findDistinctTags();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<CodingChallengeDto> rechercherChallengesByTitre(String titre) {
         return codingChallengeRepository.findByTitreContainingIgnoreCase(titre)
                 .stream()

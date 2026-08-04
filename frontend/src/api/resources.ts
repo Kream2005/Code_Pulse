@@ -27,19 +27,43 @@ export async function getNotificationsByUserPage(
   page: number,
   size: number,
   q?: string,
-  statut?: string
+  statut?: string,
+  tag?: string
 ) {
   const { data } = await client.get<PageResponse<NotificationDto>>(
     '/notifications/get-notifications-by-utilisateur-pages/page',
-    { params: { utilisateurId, page, size, ...(q ? { q } : {}), ...(statut ? { statut } : {}) } }
+    {
+      params: {
+        utilisateurId,
+        page,
+        size,
+        ...(q ? { q } : {}),
+        ...(statut ? { statut } : {}),
+        ...(tag ? { tag } : {}),
+      },
+    }
   );
   return data;
 }
 
-export async function getNotificationsPage(page: number, size: number, statut?: string, q?: string) {
+export async function getNotificationsPage(
+  page: number,
+  size: number,
+  statut?: string,
+  q?: string,
+  tag?: string
+) {
   const { data } = await client.get<PageResponse<NotificationDto>>(
     '/notifications/get-notifications-pages/page',
-    { params: { page, size, ...(statut ? { statut } : {}), ...(q ? { q } : {}) } }
+    {
+      params: {
+        page,
+        size,
+        ...(statut ? { statut } : {}),
+        ...(q ? { q } : {}),
+        ...(tag ? { tag } : {}),
+      },
+    }
   );
   return data;
 }
@@ -68,18 +92,40 @@ export async function getFeedbacksByUserPage(
   page: number,
   size: number,
   q?: string,
-  statut?: string
+  statut?: string,
+  tag?: string
 ) {
   const { data } = await client.get<PageResponse<FeedbackResponse>>(
     '/feedbacks/get-feedback-by-utilisateur-pages/page',
-    { params: { utilisateurId, page, size, ...(q ? { q } : {}), ...(statut ? { statut } : {}) } }
+    {
+      params: {
+        utilisateurId,
+        page,
+        size,
+        ...(q ? { q } : {}),
+        ...(statut ? { statut } : {}),
+        ...(tag ? { tag } : {}),
+      },
+    }
   );
   return data;
 }
 
-export async function getFeedbacksPage(page: number, size: number, q?: string, statut?: string) {
+export async function getFeedbacksPage(
+  page: number,
+  size: number,
+  q?: string,
+  statut?: string,
+  tag?: string
+) {
   const { data } = await client.get<PageResponse<FeedbackResponse>>('/feedbacks/get-feedback-pages/page', {
-    params: { page, size, ...(q ? { q } : {}), ...(statut ? { statut } : {}) },
+    params: {
+      page,
+      size,
+      ...(q ? { q } : {}),
+      ...(statut ? { statut } : {}),
+      ...(tag ? { tag } : {}),
+    },
   });
   return data;
 }
@@ -126,6 +172,11 @@ export async function getChallengesPage(page: number, size: number, q?: string, 
     '/coding-challenges/get-coding-challenges-pages/page',
     { params: { page, size, ...(q ? { q } : {}), ...(tag ? { tag } : {}) } }
   );
+  return data;
+}
+
+export async function getChallengeTags() {
+  const { data } = await client.get<string[]>('/coding-challenges/tags');
   return data;
 }
 

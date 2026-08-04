@@ -91,11 +91,12 @@ public class NotificationServiceImp implements NotificationService {
     @Override
     @Transactional(readOnly = true)
     public Page<NotificationDto> searchNotificationsByUtilisateur(
-            Long utilisateurId, String keyword, StatutNotification statut, int page, int size
+            Long utilisateurId, String keyword, StatutNotification statut, String tag, int page, int size
     ) {
         String normalized = keyword == null ? "" : keyword.trim();
+        String normalizedTag = tag == null ? "" : tag.trim();
         return notificationRepository
-                .searchByUtilisateur(utilisateurId, normalized, statut, PageRequest.of(page, size))
+                .searchByUtilisateur(utilisateurId, normalized, statut, normalizedTag, PageRequest.of(page, size))
                 .map(mapper::toNotificationDto);
     }
 
@@ -133,9 +134,12 @@ public class NotificationServiceImp implements NotificationService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<NotificationDto> searchNotifications(String keyword, StatutNotification statut, int page, int size) {
+    public Page<NotificationDto> searchNotifications(
+            String keyword, StatutNotification statut, String tag, int page, int size
+    ) {
         String normalized = keyword == null ? "" : keyword.trim();
-        return notificationRepository.search(normalized, statut, PageRequest.of(page, size))
+        String normalizedTag = tag == null ? "" : tag.trim();
+        return notificationRepository.search(normalized, statut, normalizedTag, PageRequest.of(page, size))
                 .map(mapper::toNotificationDto);
     }
 

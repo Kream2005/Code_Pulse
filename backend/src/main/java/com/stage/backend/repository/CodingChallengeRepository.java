@@ -40,4 +40,13 @@ public interface CodingChallengeRepository extends JpaRepository<CodingChallenge
             )
             """)
     Page<CodingChallenge> search(@Param("keyword") String keyword, @Param("tag") String tag, Pageable pageable);
+
+    @Query("""
+            SELECT DISTINCT c.tag FROM coding_challenge c
+            WHERE c.supprime = false
+            AND c.tag IS NOT NULL
+            AND c.tag <> ''
+            ORDER BY c.tag
+            """)
+    List<String> findDistinctTags();
 }

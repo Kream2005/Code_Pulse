@@ -7,7 +7,7 @@ import SearchInput from '../../components/SearchInput';
 import FilterSelect from '../../components/FilterSelect';
 import StatusBadge from '../../components/StatusBadge';
 import Table from '../../components/Table';
-import { getFeedbacksPage } from '../../api/resources';
+import { getChallengeTags, getFeedbacksPage } from '../../api/resources';
 import type { FeedbackResponse } from '../../api/types';
 import { useI18n } from '../../i18n/I18nContext';
 
@@ -33,10 +33,18 @@ export default function AdminFeedbacks() {
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [statutFilter, setStatutFilter] = useState('');
+  const [tagFilter, setTagFilter] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+
+  useEffect(() => {
+    getChallengeTags()
+      .then(setTags)
+      .catch(() => setTags([]));
+  }, []);
 
   useEffect(() => {
     setLoading(true);
-    getFeedbacksPage(page, size, search, statutFilter)
+    getFeedbacksPage(page, size, search || undefined, statutFilter || undefined, tagFilter || undefined)
       .then((data) => {
         setItems(data.content);
         setTotalPages(data.totalPages);
@@ -44,7 +52,7 @@ export default function AdminFeedbacks() {
       })
       .catch((err) => setError(err.response?.data?.message ?? 'Chargement impossible.'))
       .finally(() => setLoading(false));
-  }, [page, size, search, statutFilter]);
+  }, [page, size, search, statutFilter, tagFilter]);
 
   function onSearchChange(value: string) {
     setPage(0);
@@ -54,6 +62,11 @@ export default function AdminFeedbacks() {
   function onStatutFilterChange(value: string) {
     setPage(0);
     setStatutFilter(value);
+  }
+
+  function onTagFilterChange(value: string) {
+    setPage(0);
+    setTagFilter(value);
   }
 
   return (
@@ -69,12 +82,22 @@ export default function AdminFeedbacks() {
             allLabel={t('common.allStatuses')}
             options={FEEDBACK_STATUSES.map((s) => ({ value: s, label: s }))}
           />
+          <FilterSelect
+            value={tagFilter}
+            onChange={onTagFilterChange}
+            allLabel={t('common.allTags')}
+            options={tags.map((tg) => ({ value: tg, label: tg }))}
+          />
         </div>
         <Table
           columns={['ID', 'Utilisateur', 'Challenge', 'Note', 'Statut', 'Date']}
           isEmpty={!loading && items.length === 0}
           emptyLabel={
-            loading ? 'Chargement…' : search || statutFilter ? t('common.noResults') : 'Aucun feedback.'
+            loading
+              ? 'Chargement…'
+              : search || statutFilter || tagFilter
+                ? t('common.noResults')
+                : 'Aucun feedback.'
           }
         >
           {items.map((f) => (

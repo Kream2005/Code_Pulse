@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Card from '../components/Card';
+import FilterSelect from '../components/FilterSelect';
 import PageHeader from '../components/PageHeader';
 import Pagination from '../components/Pagination';
 import SearchInput from '../components/SearchInput';
 import StatusBadge from '../components/StatusBadge';
 import Table from '../components/Table';
 import { getUserId } from '../auth';
-import { getFeedbacksByUserPage } from '../api/resources';
+import { getChallengeTags, getFeedbacksByUserPage } from '../api/resources';
 import type { FeedbackResponse } from '../api/types';
 import { useI18n } from '../i18n/I18nContext';
+
+const FEEDBACK_STATUSES = ['EN_COURS', 'NON_SOUMIS', 'SOUMIS'];
 
 export default function MyFeedback() {
   const { t } = useI18n();
@@ -21,6 +24,15 @@ export default function MyFeedback() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+  const [statut, setStatut] = useState('');
+  const [tag, setTag] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+
+  useEffect(() => {
+    getChallengeTags()
+      .then(setTags)
+      .catch(() => setTags([]));
+  }, []);
 
   useEffect(() => {
     const uid = getUserId();
@@ -30,7 +42,7 @@ export default function MyFeedback() {
       return;
     }
     setLoading(true);
-    getFeedbacksByUserPage(uid, page, size, search || undefined)
+    getFeedbacksByUserPage(uid, page, size, search || undefined, statut || undefined, tag || undefined)
       .then((data) => {
         setItems(data.content);
         setTotalPages(data.totalPages);
@@ -38,12 +50,24 @@ export default function MyFeedback() {
       })
       .catch((err) => setError(err.response?.data?.message ?? t('common.errorGeneric')))
       .finally(() => setLoading(false));
-  }, [page, size, search, t]);
+  }, [page, size, search, statut, tag, t]);
 
   function onSearchChange(value: string) {
     setPage(0);
     setSearch(value);
   }
+
+  function onStatutChange(value: string) {
+    setPage(0);
+    setStatut(value);
+  }
+
+  function onTagChange(value: string) {
+    setPage(0);
+    setTag(value);
+  }
+
+  const hasFilters = Boolean(search || statut || tag);
 
   return (
     <div>
@@ -57,6 +81,18 @@ export default function MyFeedback() {
             placeholder={t('common.searchPlaceholder')}
             className="max-w-xs"
           />
+          <FilterSelect
+            value={statut}
+            onChange={onStatutChange}
+            allLabel={t('common.allStatuses')}
+            options={FEEDBACK_STATUSES.map((s) => ({ value: s, label: s }))}
+          />
+          <FilterSelect
+            value={tag}
+            onChange={onTagChange}
+            allLabel={t('common.allTags')}
+            options={tags.map((tg) => ({ value: tg, label: tg }))}
+          />
         </div>
         <Table
           columns={[
@@ -68,7 +104,9 @@ export default function MyFeedback() {
             t('common.action'),
           ]}
           isEmpty={loading || items.length === 0}
-          emptyLabel={loading ? t('common.loading') : search ? t('common.noResults') : t('myFeedback.empty')}
+          emptyLabel={
+            loading ? t('common.loading') : hasFilters ? t('common.noResults') : t('myFeedback.empty')
+          }
         >
           {items.map((f) => (
             <tr key={f.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/60">

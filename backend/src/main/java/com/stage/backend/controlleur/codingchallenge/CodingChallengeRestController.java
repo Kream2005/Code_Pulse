@@ -73,6 +73,12 @@ public class CodingChallengeRestController {
         return ResponseEntity.ok(service.searchCodingChallenges(q, tag, page, size));
     }
 
+    @GetMapping("/tags")
+    @PreAuthorize(SecurityRoles.AUTHENTICATED)
+    public ResponseEntity<List<String>> getDistinctTags() {
+        return ResponseEntity.ok(service.getDistinctTags());
+    }
+
     @GetMapping("/get-coding-challenge-titre")
     @PreAuthorize(SecurityRoles.READ_FEEDBACKS)
     public ResponseEntity<List<CodingChallengeDto>> rechercherChallengesByTitre(
