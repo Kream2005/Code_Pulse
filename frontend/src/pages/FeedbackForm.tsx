@@ -15,9 +15,22 @@ import {
 import type { FeedbackFormResponse, NotificationDto, QuestionFeedback } from '../api/types';
 import { useI18n } from '../i18n/I18nContext';
 
+/** While typing, allow incomplete decimals like "5." or ".5". */
+function isNoteDraft(value: string): boolean {
+  return /^\d*\.?\d*$/.test(value.trim());
+}
+
+function normalizeNote(value: string): string {
+  let v = value.trim();
+  if (v.endsWith('.') && v.length > 1) v = v.slice(0, -1);
+  if (v.startsWith('.') && v.length > 1) v = `0${v}`;
+  return v;
+}
+
 function isValidNote(value: string): boolean {
-  if (!value.trim()) return false;
-  const n = Number(value);
+  const normalized = normalizeNote(value);
+  if (!normalized) return false;
+  const n = Number(normalized);
   return Number.isFinite(n) && n >= 0 && n <= 5;
 }
 
@@ -88,8 +101,11 @@ export default function FeedbackFormPage() {
     });
     setFieldErrors((prev) => {
       const next = [...prev];
-      if (question.type === 'NOTE' && value.trim() && !isValidNote(value)) {
-        next[index] = t('feedbackForm.noteInvalid');
+      if (question.type === 'NOTE' && value.trim()) {
+        const draft = value.trim();
+        // Allow incomplete decimals while typing ("5.") — validate fully on blur/submit.
+        const incomplete = draft.endsWith('.') && isNoteDraft(draft);
+        next[index] = incomplete || isValidNote(draft) ? '' : t('feedbackForm.noteInvalid');
       } else {
         next[index] = '';
       }
@@ -133,14 +149,20 @@ export default function FeedbackFormPage() {
         statut: 'SOUMIS',
         reponses: formData.questions.map((q, i) => ({
           questionId: q.id,
-          valeur: answers[i] ?? '',
+          valeur: q.type === 'NOTE' ? normalizeNote(answers[i] ?? '') : (answers[i] ?? ''),
         })),
       });
       navigate('/inbox');
     } catch (err: unknown) {
-      setError(
+      const status = (err as { response?: { status?: number; data?: { message?: string } } })?.response
+        ?.status;
+      const message =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-          'Échec de soumission.'
+        'Échec de soumission.';
+      setError(
+        status === 409
+          ? t('feedbackForm.already')
+          : message
       );
       setSaving(false);
     }
@@ -159,13 +181,14 @@ export default function FeedbackFormPage() {
       return (
         <>
           <input
-            type="number"
+            type="text"
             inputMode="decimal"
-            step="any"
-            min={0}
-            max={5}
             value={value}
             onChange={(e) => setAnswer(i, e.target.value, q)}
+            onBlur={() => {
+              const normalized = normalizeNote(value);
+              if (normalized !== value) setAnswer(i, normalized, q);
+            }}
             required={q.obligatoire}
             placeholder={t('feedbackForm.noteHint')}
             className={baseClass}

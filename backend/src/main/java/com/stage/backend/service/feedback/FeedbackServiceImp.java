@@ -58,7 +58,8 @@ public class FeedbackServiceImp implements FeedbackService {
 
     @Override
     public FeedbackResponse submitFeedback(SubmitFeedbackRequest request, Long utilisateurId) {
-        if (repository.existsByUtilisateurIdAndCodingChallengeId(utilisateurId, request.codingChallengeId())) {
+        if (repository.existsByUtilisateurIdAndCodingChallengeId(utilisateurId, request.codingChallengeId())
+                || repository.existsByCodingChallengeId(request.codingChallengeId())) {
             integrationLogService.logEvent(
                     TypeLog.FEEDBACK,
                     StatutLog.WARNING,
@@ -103,7 +104,11 @@ public class FeedbackServiceImp implements FeedbackService {
                                 "Question not found: " + answerReq.questionId()
                         ));
                 ReponseFeedback reponse = new ReponseFeedback();
-                reponse.setValeur(answerReq.valeur());
+                String valeur = answerReq.valeur();
+                if (question.getType() == TypeQuestion.NOTE && valeur != null && !valeur.isBlank()) {
+                    valeur = normalizeNoteValue(valeur);
+                }
+                reponse.setValeur(valeur);
                 reponse.setQuestionFeedback(question);
                 reponse.setFeedbackId(saved.getId());
                 reponseFeedbackRepository.save(reponse);
@@ -175,9 +180,10 @@ public class FeedbackServiceImp implements FeedbackService {
     }
 
     private void validateNoteAnswer(QuestionFeedback question, String valeur, Long challengeId) {
+        String normalized = normalizeNoteValue(valeur);
         float parsed;
         try {
-            parsed = Float.parseFloat(valeur);
+            parsed = Float.parseFloat(normalized);
         } catch (NumberFormatException ex) {
             integrationLogService.logEvent(
                     TypeLog.FEEDBACK,
@@ -196,6 +202,18 @@ public class FeedbackServiceImp implements FeedbackService {
                     "Answer for \"" + question.getLibelle() + "\" must be a number between 0 and 5"
             );
         }
+    }
+
+    /** Accepts values like "5." or "3." as 5 / 3 while typing or submitting. */
+    private static String normalizeNoteValue(String valeur) {
+        String trimmed = valeur.trim();
+        if (trimmed.endsWith(".") && trimmed.length() > 1) {
+            return trimmed.substring(0, trimmed.length() - 1);
+        }
+        if (trimmed.startsWith(".") && trimmed.length() > 1) {
+            return "0" + trimmed;
+        }
+        return trimmed;
     }
 
     private void validateChoixAnswer(QuestionFeedback question, String valeur, Long challengeId) {
@@ -230,6 +248,7 @@ public class FeedbackServiceImp implements FeedbackService {
                         .map(questionFeedbackMapper::toQuestionFeedbackResponse)
                         .toList(),
                 repository.existsByUtilisateurIdAndCodingChallengeId(utilisateurId, codingChallengeId)
+                        || repository.existsByCodingChallengeId(codingChallengeId)
         );
     }
 
