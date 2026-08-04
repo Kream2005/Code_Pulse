@@ -4,6 +4,7 @@ import type {
   CodingChallengeDto,
   ChallengeAdminDashboardKpi,
   DemandeReinitialisationDto,
+  FeedbackDetailsResponse,
   FeedbackFormResponse,
   FeedbackParticipation,
   FeedbackResponse,
@@ -131,7 +132,7 @@ export async function getFeedbacksPage(
 }
 
 export async function getFeedbackDetails(id: number) {
-  const { data } = await client.get(`/feedbacks/details/${id}`);
+  const { data } = await client.get<FeedbackDetailsResponse>(`/feedbacks/details/${id}`);
   return data;
 }
 

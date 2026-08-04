@@ -127,12 +127,21 @@ export default function MyFeedback() {
                 {f.createdAt ? new Date(f.createdAt).toLocaleDateString() : '—'}
               </td>
               <td className="px-4 py-3">
-                <Link
-                  to={`/feedback/form?challengeId=${f.codingChallengeId}`}
-                  className="text-xs font-semibold text-brand hover:text-brand-dark"
-                >
-                  {t('common.view')}
-                </Link>
+                {f.statut === 'SOUMIS' ? (
+                  <Link
+                    to={`/feedback/${f.id}`}
+                    className="text-xs font-semibold text-brand hover:text-brand-dark"
+                  >
+                    {t('common.view')}
+                  </Link>
+                ) : (
+                  <Link
+                    to={`/feedback/form?challengeId=${f.codingChallengeId}`}
+                    className="text-xs font-semibold text-brand hover:text-brand-dark"
+                  >
+                    {t('feedbackForm.fill')}
+                  </Link>
+                )}
               </td>
             </tr>
           ))}

@@ -19,6 +19,7 @@ import ResetPassword from './pages/ResetPassword';
 import Inbox from './pages/Inbox';
 import MyFeedback from './pages/MyFeedback';
 import FeedbackFormPage from './pages/FeedbackForm';
+import FeedbackDetails from './pages/FeedbackDetails';
 import Profile from './pages/Profile';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
@@ -79,6 +80,16 @@ export default function App() {
           <Shell>
             <UserRoute>
               <FeedbackFormPage />
+            </UserRoute>
+          </Shell>
+        }
+      />
+      <Route
+        path="/feedback/:id"
+        element={
+          <Shell>
+            <UserRoute>
+              <FeedbackDetails backTo="/my-feedback" />
             </UserRoute>
           </Shell>
         }
@@ -148,6 +159,16 @@ export default function App() {
           <Shell>
             <FeedbacksAdminRoute>
               <AdminFeedbacks />
+            </FeedbacksAdminRoute>
+          </Shell>
+        }
+      />
+      <Route
+        path="/admin/feedbacks/:id"
+        element={
+          <Shell>
+            <FeedbacksAdminRoute>
+              <FeedbackDetails backTo="/admin/feedbacks" />
             </FeedbacksAdminRoute>
           </Shell>
         }

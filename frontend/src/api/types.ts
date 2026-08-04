@@ -91,6 +91,23 @@ export interface FeedbackResponse {
   challengeSupprime?: boolean;
 }
 
+export interface ReponseFeedbackResponse {
+  id: number;
+  valeur: string;
+  questionFeedbackId: number;
+  feedbackId: number;
+  questionLibelle: string | null;
+  questionType: string | null;
+  questionObligatoire: boolean;
+  questionChoix: string[] | null;
+  questionSupprime: boolean;
+}
+
+export interface FeedbackDetailsResponse {
+  feedback: FeedbackResponse;
+  reponses: ReponseFeedbackResponse[];
+}
+
 export interface DemandeReinitialisationDto {
   id: number;
   email: string;

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Card from '../../components/Card';
 import ErrorBanner from '../../components/ErrorBanner';
 import PageHeader from '../../components/PageHeader';
@@ -90,7 +91,7 @@ export default function AdminFeedbacks() {
           />
         </div>
         <Table
-          columns={['ID', 'Utilisateur', 'Challenge', 'Note', 'Statut', 'Date']}
+          columns={['ID', 'Utilisateur', 'Challenge', 'Note', 'Statut', 'Date', t('common.action')]}
           isEmpty={!loading && items.length === 0}
           emptyLabel={
             loading
@@ -114,7 +115,7 @@ export default function AdminFeedbacks() {
                   {f.challengeTitre ?? `#${f.codingChallengeId}`}
                 </span>
                 {f.challengeSupprime && (
-                  <span className="ml-2 text-xs text-amber-600">(challenge archivé)</span>
+                  <span className="ml-2 text-xs text-amber-600">{t('common.challengeArchived')}</span>
                 )}
               </td>
               <td className="px-4 py-3">{f.noteGlobale ?? '—'}</td>
@@ -123,6 +124,18 @@ export default function AdminFeedbacks() {
               </td>
               <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                 {f.createdAt ? new Date(f.createdAt).toLocaleDateString('fr-FR') : '—'}
+              </td>
+              <td className="px-4 py-3">
+                {f.statut === 'SOUMIS' ? (
+                  <Link
+                    to={`/admin/feedbacks/${f.id}`}
+                    className="text-xs font-semibold text-brand hover:text-brand-dark"
+                  >
+                    {t('common.view')}
+                  </Link>
+                ) : (
+                  <span className="text-xs text-slate-400">—</span>
+                )}
               </td>
             </tr>
           ))}
