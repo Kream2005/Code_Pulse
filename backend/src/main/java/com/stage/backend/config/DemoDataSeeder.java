@@ -164,17 +164,16 @@ public class DemoDataSeeder implements ApplicationRunner {
 
     private void seedQuestions() {
         long existing = questionFeedbackRepository.countBySupprimeFalse();
-        if (existing >= TARGET_QUESTIONS) {
-            return;
-        }
-        List<QuestionFeedback> batch = new ArrayList<>();
-        for (int i = (int) existing; i < TARGET_QUESTIONS && i < QUESTION_DEFS.length; i++) {
-            String[] d = QUESTION_DEFS[i];
-            batch.add(question(d[0], TypeQuestion.valueOf(d[1]), Boolean.parseBoolean(d[2])));
-        }
-        if (!batch.isEmpty()) {
-            questionFeedbackRepository.saveAll(batch);
-            log.info("Demo questions seeded (+{})", batch.size());
+        if (existing < TARGET_QUESTIONS) {
+            List<QuestionFeedback> batch = new ArrayList<>();
+            for (int i = (int) existing; i < TARGET_QUESTIONS && i < QUESTION_DEFS.length; i++) {
+                String[] d = QUESTION_DEFS[i];
+                batch.add(question(d[0], TypeQuestion.valueOf(d[1]), Boolean.parseBoolean(d[2])));
+            }
+            if (!batch.isEmpty()) {
+                questionFeedbackRepository.saveAll(batch);
+                log.info("Demo questions seeded (+{})", batch.size());
+            }
         }
         // Backfill CHOIX options on older seeded questions that had none.
         List<QuestionFeedback> missingChoix = questionFeedbackRepository.findBySupprimeFalse().stream()
