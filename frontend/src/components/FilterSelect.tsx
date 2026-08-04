@@ -8,7 +8,6 @@ type Props = {
   className?: string;
 };
 
-/** Generic dropdown filter (status/type/role/…) that triggers an immediate API call on change. */
 export default function FilterSelect({ value, onChange, options, allLabel, className }: Props) {
   return (
     <select

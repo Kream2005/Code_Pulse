@@ -10,12 +10,6 @@ type Props = {
   autoFocus?: boolean;
 };
 
-/**
- * Live-search input: keeps its own draft state so every keystroke renders
- * instantly, then fires `onChange` (and therefore the API call) after a
- * short debounce so we don't spam the backend on every single keypress
- * while still updating on every letter typed (no submit button/full reload).
- */
 export default function SearchInput({
   value,
   onChange,
