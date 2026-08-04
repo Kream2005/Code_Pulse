@@ -1,0 +1,92 @@
+import { useEffect, useState } from 'react';
+import Card from '../../components/Card';
+import ErrorBanner from '../../components/ErrorBanner';
+import PageHeader from '../../components/PageHeader';
+import Pagination from '../../components/Pagination';
+import StatusBadge from '../../components/StatusBadge';
+import Table from '../../components/Table';
+import { getFeedbacksPage } from '../../api/resources';
+import type { FeedbackResponse } from '../../api/types';
+
+function userLabel(f: FeedbackResponse) {
+  const name = [f.utilisateurPrenom, f.utilisateurNom].filter(Boolean).join(' ').trim();
+  const username = f.utilisateurUserName?.trim();
+  if (name && username) return `${name} (@${username})`;
+  if (name) return name;
+  if (username) return `@${username}`;
+  return f.utilisateurEmail ?? `#${f.utilisateurId}`;
+}
+
+export default function AdminFeedbacks() {
+  const [items, setItems] = useState<FeedbackResponse[]>([]);
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    setLoading(true);
+    getFeedbacksPage(page, size)
+      .then((data) => {
+        setItems(data.content);
+        setTotalPages(data.totalPages);
+        setTotalElements(data.totalElements);
+      })
+      .catch((err) => setError(err.response?.data?.message ?? 'Chargement impossible.'))
+      .finally(() => setLoading(false));
+  }, [page, size]);
+
+  return (
+    <div>
+      <PageHeader title="Feedbacks" subtitle="Tous les retours soumis." />
+      {error && <ErrorBanner message={error} />}
+      <Card>
+        <Table
+          columns={['ID', 'Utilisateur', 'Challenge', 'Note', 'Statut', 'Date']}
+          isEmpty={!loading && items.length === 0}
+          emptyLabel={loading ? 'Chargement…' : 'Aucun feedback.'}
+        >
+          {items.map((f) => (
+            <tr key={f.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/60">
+              <td className="px-5 py-3.5 text-slate-500">{f.id}</td>
+              <td className="px-5 py-3.5">
+                <div className="font-medium text-slate-800 dark:text-slate-100">{userLabel(f)}</div>
+                {f.utilisateurEmail && (
+                  <div className="text-xs text-slate-500 dark:text-slate-400">{f.utilisateurEmail}</div>
+                )}
+              </td>
+              <td className="px-5 py-3.5">
+                <span className="font-medium text-slate-800 dark:text-slate-100">
+                  {f.challengeTitre ?? `#${f.codingChallengeId}`}
+                </span>
+                {f.challengeSupprime && (
+                  <span className="ml-2 text-xs text-amber-600">(challenge archivé)</span>
+                )}
+              </td>
+              <td className="px-5 py-3.5">{f.noteGlobale ?? '—'}</td>
+              <td className="px-5 py-3.5">
+                <StatusBadge status={f.statut} />
+              </td>
+              <td className="px-5 py-3.5 text-slate-500 dark:text-slate-400">
+                {f.createdAt ? new Date(f.createdAt).toLocaleDateString('fr-FR') : '—'}
+              </td>
+            </tr>
+          ))}
+        </Table>
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          totalElements={totalElements}
+          size={size}
+          onPageChange={setPage}
+          onSizeChange={(s) => {
+            setPage(0);
+            setSize(s);
+          }}
+        />
+      </Card>
+    </div>
+  );
+}
