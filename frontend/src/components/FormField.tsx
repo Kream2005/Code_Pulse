@@ -10,6 +10,8 @@ export default function FormField({
   onChange,
   placeholder,
   minLength,
+  autoComplete,
+  name,
 }: {
   label: string;
   icon: LucideIcon;
@@ -18,6 +20,8 @@ export default function FormField({
   onChange: (v: string) => void;
   placeholder?: string;
   minLength?: number;
+  autoComplete?: string;
+  name?: string;
 }) {
   const [reveal, setReveal] = useState(false);
   const isPassword = type === 'password';
@@ -33,6 +37,8 @@ export default function FormField({
         </span>
         <input
           type={isPassword && reveal ? 'text' : type}
+          name={name}
+          autoComplete={autoComplete ?? (isPassword ? 'new-password' : undefined)}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           required

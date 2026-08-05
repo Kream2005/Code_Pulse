@@ -59,6 +59,8 @@ export default function Login() {
             label={t('auth.email')}
             icon={Mail}
             type="email"
+            name="email"
+            autoComplete="username"
             value={email}
             onChange={setEmail}
             placeholder="vous@exemple.com"
@@ -67,6 +69,8 @@ export default function Login() {
             label={t('auth.password')}
             icon={Lock}
             type="password"
+            name="password"
+            autoComplete="current-password"
             value={password}
             onChange={setPassword}
             placeholder="••••••••"

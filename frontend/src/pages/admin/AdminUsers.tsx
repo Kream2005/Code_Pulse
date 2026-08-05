@@ -120,6 +120,8 @@ export default function AdminUsers() {
             className="rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
             placeholder="Mot de passe"
             type="password"
+            name="new-user-password"
+            autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required

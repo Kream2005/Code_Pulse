@@ -116,6 +116,8 @@ export default function CompleteAccount() {
                   label={t('auth.password')}
                   icon={Lock}
                   type="password"
+                  name="new-password"
+                  autoComplete="new-password"
                   value={password}
                   onChange={setPassword}
                   minLength={8}
@@ -124,6 +126,8 @@ export default function CompleteAccount() {
                   label={t('auth.confirm')}
                   icon={Lock}
                   type="password"
+                  name="confirm-password"
+                  autoComplete="new-password"
                   value={confirm}
                   onChange={setConfirm}
                 />

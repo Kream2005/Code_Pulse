@@ -174,6 +174,8 @@ export default function PasswordRequests() {
                   <div className="flex gap-2">
                     <input
                       type="password"
+                      name={`temp-password-${d.id}`}
+                      autoComplete="new-password"
                       placeholder="Mot de passe temp."
                       value={temps[d.id] ?? ''}
                       onChange={(e) => setTemps((p) => ({ ...p, [d.id]: e.target.value }))}
