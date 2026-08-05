@@ -1,17 +1,17 @@
 @echo off
-setlocal
+setlocal EnableExtensions
 cd /d "%~dp0\.."
+set "RESOURCES=%cd%\backend\src\main\resources"
 
 echo ==^> CodePulse STANDALONE mode (Postgres + HTTP publisher, no Kafka/Mailpit/Docker)
-echo     Requires: PostgreSQL on localhost:5432
+echo     Requires: PostgreSQL on localhost:5432  (scripts\create-db.sql once)
 echo     App:  http://localhost:4200
-echo     Demo seed (on first/standalone start): ~48 challenges, ~28 candidates,
-echo             ~16 questions, ~36 feedbacks, ~40 inbox notifs, ~18 password resets
-echo     Admin: admin@codepulse.local / Admin1234!
-echo     User:  demo.user@codepulse.local / Demo1234!
-echo     Challenge admin: challenge.admin@codepulse.local / Challenge1234!
-echo     Manager RH: manager.rh@codepulse.local / Manager1234!
-echo     Toggle: codepulse.mode=standalone in backend\src\main\resources\application.properties
+echo     API:  http://localhost:8080
+echo     Accounts:
+echo       USER:                   demo.user@codepulse.local / Demo1234!
+echo       ADMIN_CODING_CHALLENGE: challenge.admin@codepulse.local / Challenge1234!
+echo       MANAGER_RH:             manager.rh@codepulse.local / Manager1234!
+echo       ADMIN_CODEPULSE:        admin@codepulse.local / Admin1234!
 echo.
 
 where java >nul 2>&1
@@ -24,6 +24,25 @@ where node >nul 2>&1
 if errorlevel 1 (
   echo Node.js 25+ is required. Install Node and add it to PATH.
   exit /b 1
+)
+
+if not exist "%RESOURCES%\application.properties" (
+  echo Creating application.properties from example...
+  copy /Y "%RESOURCES%\application.properties.example" "%RESOURCES%\application.properties" >nul
+  echo Edit spring.datasource.* if your Postgres password differs.
+  echo Default DB ^(scripts\create-db.sql^): codepulse / codepulse / codepulse
+)
+
+if not exist "%RESOURCES%\private.key" (
+  where openssl >nul 2>&1
+  if errorlevel 1 (
+    echo ERROR: JWT keys missing and openssl not found.
+    echo Install OpenSSL or place private.key + public.key in backend\src\main\resources\
+    exit /b 1
+  )
+  echo Generating demo JWT RSA keys...
+  openssl genrsa -out "%RESOURCES%\private.key" 2048
+  openssl rsa -in "%RESOURCES%\private.key" -pubout -out "%RESOURCES%\public.key"
 )
 
 if exist "challenge-publisher\.venv\Scripts\python.exe" (

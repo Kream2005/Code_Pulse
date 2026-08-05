@@ -4,6 +4,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BACKEND_LOG="${TMPDIR:-/tmp}/codepulse-backend-standalone.log"
+RESOURCES="$ROOT/backend/src/main/resources"
 
 # Prefer JDK 21 even if the shell already exported an older JAVA_HOME (e.g. 11).
 resolve_java_home() {
@@ -11,7 +12,10 @@ resolve_java_home() {
     "${CODEPULSE_JAVA_HOME:-}"
     "/usr/lib/jvm/jdk-21.0.6-oracle-x64"
     "/usr/lib/jvm/java-21-openjdk-amd64"
+    "/usr/lib/jvm/java-21-openjdk"
     "/usr/lib/jvm/jdk-21"
+    "/opt/homebrew/opt/openjdk@21"
+    "/usr/local/opt/openjdk@21"
   )
   local c
   for c in "${candidates[@]}"; do
@@ -20,12 +24,65 @@ resolve_java_home() {
       return 0
     fi
   done
+  if command -v /usr/libexec/java_home >/dev/null 2>&1; then
+    local mac
+    mac="$(/usr/libexec/java_home -v 21 2>/dev/null || true)"
+    if [[ -n "$mac" && -x "$mac/bin/java" ]]; then
+      echo "$mac"
+      return 0
+    fi
+  fi
   if [[ -n "${JAVA_HOME:-}" && -x "${JAVA_HOME}/bin/java" ]] \
       && "${JAVA_HOME}/bin/java" -version 2>&1 | grep -q 'version "21'; then
     echo "$JAVA_HOME"
     return 0
   fi
   return 1
+}
+
+ensure_local_config() {
+  if [[ ! -f "$RESOURCES/application.properties" ]]; then
+    echo "==> Creating backend/src/main/resources/application.properties from example"
+    cp "$RESOURCES/application.properties.example" "$RESOURCES/application.properties"
+    echo "    Edit spring.datasource.* if your Postgres user/password differ."
+    echo "    Default DB (scripts/create-db.sql): codepulse / codepulse / codepulse"
+  fi
+
+  if [[ ! -f "$RESOURCES/private.key" || ! -f "$RESOURCES/public.key" ]]; then
+    if ! command -v openssl >/dev/null 2>&1; then
+      echo "ERROR: JWT keys missing and openssl is not installed."
+      echo "Install openssl, or place private.key + public.key in backend/src/main/resources/"
+      exit 1
+    fi
+    echo "==> Generating demo JWT RSA keys (local only, gitignored)"
+    openssl genrsa -out "$RESOURCES/private.key" 2048 >/dev/null 2>&1
+    openssl rsa -in "$RESOURCES/private.key" -pubout -out "$RESOURCES/public.key" >/dev/null 2>&1
+    chmod 600 "$RESOURCES/private.key"
+  fi
+}
+
+ensure_node() {
+  export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+  if [ -s "$NVM_DIR/nvm.sh" ]; then
+    # shellcheck disable=SC1090
+    . "$NVM_DIR/nvm.sh"
+    nvm use 25 >/dev/null 2>&1 || nvm use --lts >/dev/null 2>&1 || true
+  fi
+  if ! command -v node >/dev/null 2>&1; then
+    echo "ERROR: Node.js is required (25+ recommended)."
+    echo "Install Node, or load nvm (nvm install 25 && nvm use 25)."
+    exit 1
+  fi
+  local major
+  major="$(node -p "process.versions.node.split('.')[0]" 2>/dev/null || echo 0)"
+  if [[ "$major" -lt 20 ]]; then
+    echo "ERROR: Node.js $major is too old. Need Node 20+ (25+ recommended)."
+    exit 1
+  fi
+  if [[ "$major" -lt 25 ]]; then
+    echo "WARN: Node.js $major detected; project engines ask for 25+. Continuing anyway."
+  fi
+  echo "    Node: $(node -v) ($(command -v node))"
 }
 
 JAVA_HOME="$(resolve_java_home)" || {
@@ -37,24 +94,21 @@ export JAVA_HOME
 export PATH="$JAVA_HOME/bin:$PATH"
 echo "    Java: $JAVA_HOME ($("$JAVA_HOME/bin/java" -version 2>&1 | head -1))"
 
+ensure_local_config
+ensure_node
+
 echo "==> CodePulse STANDALONE mode (Postgres + HTTP publisher, Kafka/mail off)"
-echo "    Requires: PostgreSQL :5432"
-echo "    Seed: ~48 challenges, ~28 candidates, ~16 questions, ~36 feedbacks,"
-echo "          ~40 inbox notifs for demo.user, ~18 password-reset requests"
+echo "    Requires: PostgreSQL :5432 (scripts/create-db.sql once)"
+echo "    Seed: challenges, candidates, questions, feedbacks, inbox notifs, password resets"
 echo "    App:  http://localhost:4200"
 echo "    API:  http://localhost:8080"
 echo "    Publisher HTTP: http://localhost:9999/api/challenges"
-echo "    Admin: admin@codepulse.local / Admin1234!"
-echo "    User:  demo.user@codepulse.local / Demo1234!"
+echo "    Accounts:"
+echo "      USER:                  demo.user@codepulse.local / Demo1234!"
+echo "      ADMIN_CODING_CHALLENGE: challenge.admin@codepulse.local / Challenge1234!"
+echo "      MANAGER_RH:            manager.rh@codepulse.local / Manager1234!"
+echo "      ADMIN_CODEPULSE:       admin@codepulse.local / Admin1234!"
 echo
-
-export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
-if [ -s "$NVM_DIR/nvm.sh" ]; then
-  # shellcheck disable=SC1090
-  . "$NVM_DIR/nvm.sh"
-  nvm use 25 >/dev/null 2>&1 || true
-  export PATH="$NVM_DIR/versions/node/$(nvm version 25 2>/dev/null || echo v25.9.0)/bin:$PATH"
-fi
 
 fuser -k 8080/tcp 2>/dev/null || true
 fuser -k 4200/tcp 2>/dev/null || true
@@ -105,7 +159,7 @@ trap cleanup EXIT INT TERM
 
 echo "Waiting for API…"
 API_UP=0
-for i in $(seq 1 60); do
+for i in $(seq 1 90); do
   if ! kill -0 "$BACKEND_PID" 2>/dev/null; then
     echo "ERROR: backend exited early. Last log lines:"
     tail -n 40 "$BACKEND_LOG" || true

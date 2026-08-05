@@ -42,10 +42,22 @@ Independent switches (still honored inside each mode):
 
 ## Quick start
 
-### Linux
+### Prerequisites (any PC)
+
+1. **JDK 21**, **Node.js 25+**, **PostgreSQL**, **Python 3**, **OpenSSL**
+2. Create the DB once:
+   ```bash
+   sudo -u postgres psql -f scripts/create-db.sql
+   ```
+3. Local config is **gitignored**. On a fresh clone, `start-demo` will:
+   - copy `application.properties.example` → `application.properties`
+   - generate JWT `private.key` / `public.key` if missing  
+   Adjust `spring.datasource.password` if your Postgres password is not `codepulse`.
+
+### Linux / macOS
 
 ```bash
-nvm use 25
+nvm use 25   # optional if Node 25+ is already on PATH
 ./scripts/start-demo.sh    # standalone (Postgres, HTTP publisher, no Kafka)
 ./scripts/start-full.sh    # Postgres + Kafka + optional Mailpit
 ```
@@ -53,7 +65,6 @@ nvm use 25
 ### Windows
 
 ```bat
-cd frontend && npm install && cd ..
 scripts\start-demo.bat
 ```
 
