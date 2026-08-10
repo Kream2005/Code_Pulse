@@ -1,0 +1,25 @@
+# Local secrets / runtime config (never commit)
+backend/src/main/resources/application.properties
+backend/src/main/resources/private.key
+backend/src/main/resources/public.key
+**/private.key
+**/public.key
+
+backend/data/
+
+node_modules/
+**/node_modules/
+
+# python publisher
+challenge-publisher/.venv/
+**/__pycache__/
+*.pyc
+
+# frontend build
+frontend/dist/
+
+# IDE / OS
+.idea/
+*.iml
+.DS_Store
+#script#

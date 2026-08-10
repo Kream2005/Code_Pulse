@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #0070ad;
+  --color-brand-dark: #005180;
+  --color-brand-light: #12abdb;
+  --font-sans: "Ubuntu", ui-sans-serif, system-ui, sans-serif;
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+body {
+  background-color: #f7f9fb;
+  color: #1e293b;
+  font-family: var(--font-sans);
+}
+
+.dark body,
+html.dark body {
+  background-color: #0f172a;
+  color: #e2e8f0;
+}
+
+button,
+input,
+select,
+textarea,
+[class*="border"] {
+  border-radius: 0.5rem;
+}
+
+.blob {
+  border-radius: 9999px;
+}
