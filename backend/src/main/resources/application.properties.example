@@ -1,0 +1,46 @@
+# DEMO / STANDALONE — copy to application.properties and adjust DB password if needed.
+#   cp backend/src/main/resources/application.properties.example \
+#      backend/src/main/resources/application.properties
+#
+# Needs: PostgreSQL (see scripts/create-db.sql) + JDK 21 + Node 25+
+# Does NOT need: Kafka, Mailpit, Docker
+#
+# IntelliJ: run BackendApplication (no program args needed when mode=standalone).
+
+codepulse.mode=standalone
+spring.profiles.active=${codepulse.mode}
+
+spring.application.name=backend
+server.port=8080
+
+# Matches scripts/create-db.sql defaults — change password if your local DB differs.
+spring.datasource.url=jdbc:postgresql://localhost:5432/codepulse
+spring.datasource.username=codepulse
+spring.datasource.password=codepulse
+spring.datasource.driver-class-name=org.postgresql.Driver
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=false
+
+# Generated automatically by scripts/start-demo.sh if missing.
+jwt.public.key=classpath:public.key
+jwt.private.key=classpath:private.key
+jwt.issuer=codepulse-dev
+jwt.access-token-ttl=3600
+
+codepulse.cors.allowed-origins=http://localhost:4200
+
+# Publisher (Sync button / HTTP ingest pulls from here)
+codepulse.external-api.coding-challenges-url=http://localhost:9999/api/challenges
+codepulse.external-api.connect-timeout=5s
+codepulse.external-api.read-timeout=5s
+
+codepulse.notification.from=dev@codepulse.local
+codepulse.notification.to=
+codepulse.notification.frontend-base-url=http://localhost:4200
+
+# Topic names kept for later full mode (unused in standalone)
+codepulse.kafka.topics.coding-challenges=coding-challenges
+codepulse.kafka.topics.coding-challenges-dlt=coding-challenges-dlt
+codepulse.kafka.consumer-group=codepulse-dev
+codepulse.kafka.retry.max-attempts=3
+codepulse.kafka.retry.backoff-ms=1000

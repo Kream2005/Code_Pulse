@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "date": "2026-08-02T22:38:43+0100",
+    "count": 200,
+    "run_base": 785706723,
+    "base_url": "http://localhost:8080"
+  },
+  "results": [
+    {
+      "path": "direct",
+      "http_status": 200,
+      "requested": 200,
+      "processed": 200,
+      "challenge_delta": 200,
+      "notification_delta": 200,
+      "elapsed_s": 4.7859,
+      "throughput_events_per_s": 41.79,
+      "avg_latency_ms": 23.93
+    },
+    {
+      "path": "kafka",
+      "requested": 200,
+      "published": 200,
+      "challenge_delta": 200,
+      "notification_delta": 200,
+      "publish_elapsed_s": 0.2077,
+      "e2e_elapsed_s": 1.6806,
+      "publish_throughput_events_per_s": 963.14,
+      "e2e_throughput_events_per_s": 119.01,
+      "publish_p50_ms": 1.0,
+      "publish_p95_ms": 1.37,
+      "fully_consumed": true
+    }
+  ]
+}

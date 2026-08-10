@@ -1,0 +1,17 @@
+package com.stage.backend.enums;
+
+public enum TypeLog {
+    SYNC_CHALLENGE,
+    ENVOI_NOTIFICATION,
+    RELANCE,
+    EXPORT_DONNEES,
+    AUTH,
+    FEEDBACK,
+    GESTION_UTILISATEUR,
+    AUTHORISATION,
+    GESTION_CHALLENGE,
+    DEMANDE_REINIT,
+    CONSULTATION,
+    CONFIG,
+    SYSTEME
+}

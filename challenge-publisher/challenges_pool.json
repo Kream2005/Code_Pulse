@@ -1,0 +1,66 @@
+[
+  {
+    "titre": "Two Sum",
+    "description": "Return indices of the two numbers that add up to target.",
+    "tag": "arrays",
+    "duree": 45,
+    "codeUrl": "https://example.com/challenges/two-sum",
+    "parameter": false
+  },
+  {
+    "titre": "Valid Parentheses",
+    "description": "Determine if the input string has valid parentheses.",
+    "tag": "stacks",
+    "duree": 30,
+    "codeUrl": "https://example.com/challenges/valid-parentheses",
+    "parameter": false
+  },
+  {
+    "titre": "Merge Intervals",
+    "description": "Merge all overlapping intervals and return the result.",
+    "tag": "intervals",
+    "duree": 60,
+    "codeUrl": "https://example.com/challenges/merge-intervals",
+    "parameter": true
+  },
+  {
+    "titre": "LRU Cache",
+    "description": "Design a data structure that follows LRU cache constraints.",
+    "tag": "design",
+    "duree": 75,
+    "codeUrl": "https://example.com/challenges/lru-cache",
+    "parameter": true
+  },
+  {
+    "titre": "Binary Tree Level Order",
+    "description": "Return the level order traversal of a binary tree.",
+    "tag": "trees",
+    "duree": 50,
+    "codeUrl": "https://example.com/challenges/level-order",
+    "parameter": false
+  },
+  {
+    "titre": "Word Break",
+    "description": "Check if a string can be segmented into dictionary words.",
+    "tag": "dp",
+    "duree": 70,
+    "codeUrl": "https://example.com/challenges/word-break",
+    "parameter": false
+  },
+  {
+    "titre": "Course Schedule",
+    "description": "Detect if you can finish all courses given prerequisites.",
+    "tag": "graphs",
+    "duree": 55,
+    "codeUrl": "https://example.com/challenges/course-schedule",
+    "parameter": true
+  },
+  {
+    "titre": "Find Median from Stream",
+    "description": "Continuously return the median of a number stream.",
+    "tag": "heaps",
+    "duree": 80,
+    "codeUrl": "https://example.com/challenges/median-stream",
+    "parameter": true
+  }
+]

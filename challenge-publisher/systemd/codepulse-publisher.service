@@ -1,0 +1,20 @@
+[Unit]
+Description=CodePulse challenge Kafka publisher
+After=network.target kafka.service
+Wants=kafka.service
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/codepulse-publisher
+Environment=KAFKA_BOOTSTRAP=localhost:9092
+Environment=KAFKA_TOPIC=coding-challenges
+Environment=INTERVAL_SECONDS=20
+Environment=HTTP_PORT=9999
+Environment=MODE=both
+ExecStart=/opt/codepulse-publisher/.venv/bin/python /opt/codepulse-publisher/publisher.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
