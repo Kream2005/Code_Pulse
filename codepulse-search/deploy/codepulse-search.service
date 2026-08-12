@@ -1,0 +1,14 @@
+[Unit]
+Description=CodePulse search service (semantic search, KPIs, RAG)
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/codepulse/codepulse-search
+ExecStart=/opt/codepulse/codepulse-search/run.sh
+Restart=on-failure
+RestartSec=5
+EnvironmentFile=-/opt/codepulse/codepulse-search/.env
+
+[Install]
+WantedBy=multi-user.target
