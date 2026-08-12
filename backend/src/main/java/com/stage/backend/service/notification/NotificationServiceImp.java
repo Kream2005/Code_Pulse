@@ -7,6 +7,7 @@ import com.stage.backend.email.NotificationEmailSender;
 import com.stage.backend.entity.CodingChallenge;
 import com.stage.backend.entity.Notification;
 import com.stage.backend.entity.Utilisateur;
+import com.stage.backend.enums.StatutFeedback;
 import com.stage.backend.enums.StatutLog;
 import com.stage.backend.enums.StatutNotification;
 import com.stage.backend.enums.TypeLog;
@@ -26,6 +27,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -237,6 +240,86 @@ public class NotificationServiceImp implements NotificationService {
             );
         }
         return mapper.toNotificationDto(saved);
+    }
+
+    @Override
+    public int relancerNotificationsNonLues() {
+        var relance = notificationProperties.relance();
+        if (relance == null || !relance.enabled()) {
+            return 0;
+        }
+        ZonedDateTime seuil = ZonedDateTime.now().minus(relance.delay());
+        List<Notification> due = notificationRepository.findDueForRelance(
+                Set.of(StatutNotification.EN_ATTENTE, StatutNotification.ENVOYEE, StatutNotification.ECHEC),
+                relance.max(),
+                seuil,
+                StatutFeedback.SOUMIS
+        );
+        int sent = 0;
+        for (Notification notification : due) {
+            if (relancerUne(notification)) {
+                sent++;
+            }
+        }
+        if (sent > 0) {
+            log.info("Relance sent for {} unread notification(s)", sent);
+        }
+        return sent;
+    }
+
+    private boolean relancerUne(Notification notification) {
+        Utilisateur utilisateur = notification.getUtilisateur();
+        CodingChallenge challenge = notification.getCodingChallenge();
+        if (utilisateur == null || challenge == null) {
+            return false;
+        }
+        refreshSetupTokenIfNeeded(utilisateur);
+        String actionUrl = buildActionUrl(utilisateur, challenge);
+        try {
+            emailSender.sendChallengeRelanceEmail(
+                    utilisateur,
+                    challenge,
+                    actionUrl,
+                    notification.getNombreRelances() + 1
+            );
+            notification.setNombreRelances(notification.getNombreRelances() + 1);
+            notification.setDateDerniereRelance(ZonedDateTime.now());
+            notification.setStatut(
+                    notificationProperties.enabled()
+                            ? StatutNotification.ENVOYEE
+                            : StatutNotification.EN_ATTENTE
+            );
+            notificationRepository.save(notification);
+            integrationLogService.logEvent(
+                    TypeLog.RELANCE,
+                    StatutLog.SUCCES,
+                    "Relance #" + notification.getNombreRelances()
+                            + " sent to " + utilisateur.getEmail()
+                            + " for challenge " + challenge.getTitre(),
+                    challenge.getId()
+            );
+            return true;
+        } catch (RuntimeException exception) {
+            notification.setStatut(StatutNotification.ECHEC);
+            notificationRepository.save(notification);
+            integrationLogService.logEvent(
+                    TypeLog.RELANCE,
+                    StatutLog.ERREUR,
+                    "Relance failed for " + utilisateur.getEmail()
+                            + ": " + exception.getMessage(),
+                    challenge.getId()
+            );
+            return false;
+        }
+    }
+
+    private void refreshSetupTokenIfNeeded(Utilisateur utilisateur) {
+        if (utilisateur.isCompteComplet()) {
+            return;
+        }
+        utilisateur.setSetupToken(UUID.randomUUID().toString());
+        utilisateur.setSetupTokenExpiresAt(ZonedDateTime.now().plusHours(24));
+        utilisateurRepository.save(utilisateur);
     }
 
     private String buildActionUrl(Utilisateur utilisateur, CodingChallenge codingChallenge) {

@@ -24,6 +24,7 @@ export default defineConfig({
       '/analytics': api,
       '/questions-feedback': api,
       '/reponses-feedback': api,
+      '/dev': api,
       '/api': api,
     },
   },

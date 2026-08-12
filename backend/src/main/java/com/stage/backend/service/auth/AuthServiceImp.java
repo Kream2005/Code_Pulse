@@ -96,7 +96,7 @@ public class AuthServiceImp implements AuthService {
     @Override
     public LoginResponse completeAccount(CompleteAccountRequest request) {
         Utilisateur user = repository.findBySetupToken(request.token())
-                .orElseThrow(() -> new BadCredentialsException("Invalid setup token"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid setup token"));
 
         if (user.isCompteComplet()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Account already completed");
@@ -136,10 +136,14 @@ public class AuthServiceImp implements AuthService {
     @Transactional(readOnly = true)
     public SetupAccountInfoResponse getSetupAccountInfo(String token) {
         Utilisateur user = repository.findBySetupToken(token)
-                .orElseThrow(() -> new BadCredentialsException("Invalid setup token"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid setup token"));
 
         if (user.isCompteComplet()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Account already completed");
+        }
+        if (user.getSetupTokenExpiresAt() == null
+                || user.getSetupTokenExpiresAt().isBefore(ZonedDateTime.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Setup token expired");
         }
 
         return new SetupAccountInfoResponse(

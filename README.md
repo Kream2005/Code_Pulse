@@ -7,8 +7,8 @@ Feedback platform for coding challenges — collect notifications after a challe
 | Backend | Spring Boot, Java 21, JWT, JPA |
 | Frontend | React 19, Vite 8, Tailwind 4 |
 | Database | **PostgreSQL** (required in both modes) |
-| Messaging | Kafka in `full` mode; HTTP direct ingest in `standalone` |
-| Email (optional) | Mailpit / SMTP via `codepulse.notification.enabled` |
+| Messaging | Kafka (local binary in both modes; HTTP sync still available) |
+| Email | Embedded GreenMail in `standalone` (no Docker); Mailpit / SMTP in `full` |
 
 **Node.js:** **25+** (`engines.node >= 25`).
 
@@ -29,8 +29,8 @@ codepulse.mode=standalone   # or: full
 
 | Value | Needs | Challenge ingestion |
 |-------|--------|---------------------|
-| `standalone` | PostgreSQL + JDK + Node | HTTP publisher → direct process (no Kafka) |
-| `full` | PostgreSQL + Kafka (+ optional Mailpit) | Kafka consumer (and/or HTTP sync → Kafka) |
+| `standalone` | PostgreSQL + JDK + Node + **local Kafka binary** | Kafka consumer (+ HTTP publisher) |
+| `full` | PostgreSQL + Kafka (+ optional Mailpit Docker) | Kafka consumer (and/or HTTP sync → Kafka) |
 
 Independent switches (still honored inside each mode):
 
@@ -58,22 +58,50 @@ Independent switches (still honored inside each mode):
 
 ```bash
 nvm use 25   # optional if Node 25+ is already on PATH
-./scripts/start-demo.sh    # standalone (Postgres, HTTP publisher, no Kafka)
-./scripts/start-full.sh    # Postgres + Kafka + optional Mailpit
+export KAFKA_HOME=/path/to/unpacked-kafka   # required for demo
+./scripts/start-demo.sh    # Postgres + Kafka binary + GreenMail (no Docker)
+./scripts/start-full.sh    # Postgres + Kafka + optional Mailpit Docker
 ```
 
 ### Windows
 
 ```bat
+set KAFKA_HOME=C:\path\to\unpacked-kafka
+set JAVA_HOME=C:\path\to\jdk-21
 scripts\start-demo.bat
 ```
+
+### Kafka binary (demo / work PC, no Docker)
+
+1. Install **JDK 17+** (21 recommended) and set `JAVA_HOME`.
+2. Download the Kafka **binary** (not source) from https://kafka.apache.org/downloads and unpack it.
+3. Edit `config/server.properties` (Kafka 4) or `config/kraft/server.properties` (Kafka 3):
+   - `log.dirs` must be a real folder. On Windows use forward slashes, e.g. `C:/kafka/kraft-combined-logs`
+   - Keep listener `PLAINTEXT://:9092` (or `localhost:9092`)
+4. Set `KAFKA_HOME` to the unpacked folder (the one that contains `bin/` and `config/`).
+5. First start formats KRaft storage automatically:
+
+```bash
+export KAFKA_HOME=/path/to/kafka
+./scripts/kafka-start.sh
+```
+
+```bat
+set KAFKA_HOME=C:\path\to\kafka
+scripts\kafka-start.bat
+```
+
+Broker: `localhost:9092`. Topics `coding-challenges` and `coding-challenges-dlt` are created by the script.
+
+Demo email does **not** need Docker: GreenMail is embedded in the API (`127.0.0.1:1025`). Login as admin and call `GET /dev/mailbox` to read captured mails (including relance links).
 
 | URL | |
 |-----|--|
 | UI | http://localhost:4200 |
 | API | http://localhost:8080 |
 | Publisher HTTP | http://localhost:9999/api/challenges |
-| Mailpit (full, optional) | http://localhost:8025 |
+| Mailpit (full, optional Docker) | http://localhost:8025 |
+| Captured mails (demo GreenMail) | `GET /dev/mailbox` as `admin@codepulse.local` |
 
 ---
 
@@ -125,8 +153,8 @@ cd challenge-publisher
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt   # needed for kafka / both
 
-# Standalone (no Kafka)
-python publisher.py --mode http --interval 20
+# Standalone (work PC: Kafka binary + GreenMail, no Docker)
+python publisher.py --mode both --interval 20
 
 # Full
 python publisher.py --mode both --interval 20
@@ -134,8 +162,8 @@ python publisher.py --mode both --interval 20
 
 | `--mode` | Use with |
 |----------|----------|
-| `http` | `standalone` — API sync pulls `GET /api/challenges` |
-| `kafka` / `both` | `full` |
+| `http` | HTTP-only ingest (Kafka down) |
+| `kafka` / `both` | `standalone` and `full` |
 
 ---
 
@@ -170,6 +198,7 @@ Latest summary (200 events): direct ~**42 evt/s** · Kafka publish ~**963 evt/s*
 
 ## Other product features
 
+- Automatic notification relance: unread notifications (`EN_ATTENTE` / `ENVOYEE` / `ECHEC`) are resent every **24h** (max 3), with a fresh account-setup or feedback link
 - Soft-delete (challenges, users, questions, notifications, feedbacks) with feedbacks kept for admins
 - Integration / audit logs (`CONFIG`, sync, auth, feedback, …)
 - FR / EN i18n + light / dark theme

@@ -12,6 +12,7 @@ export default function FormField({
   minLength,
   autoComplete,
   name,
+  required = true,
 }: {
   label: string;
   icon: LucideIcon;
@@ -22,6 +23,7 @@ export default function FormField({
   minLength?: number;
   autoComplete?: string;
   name?: string;
+  required?: boolean;
 }) {
   const [reveal, setReveal] = useState(false);
   const isPassword = type === 'password';
@@ -41,7 +43,7 @@ export default function FormField({
           autoComplete={autoComplete ?? (isPassword ? 'new-password' : undefined)}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          required
+          required={required}
           minLength={minLength}
           placeholder={placeholder}
           className={`w-full rounded-lg border border-slate-300 bg-white py-2 pl-11 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 ${

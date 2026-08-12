@@ -30,6 +30,8 @@ export interface SetupAccountInfo {
 export interface NotificationDto {
   id: number;
   dateEnvoi: string;
+  dateDerniereRelance?: string | null;
+  nombreRelances?: number;
   statut: string;
   utilisateurId: number;
   codingChallengeId: number;

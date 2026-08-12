@@ -32,9 +32,11 @@ public class ConfigAuditLogger implements ApplicationRunner {
             boolean kafka = flag("codepulse.kafka.enabled");
             boolean notification = flag("codepulse.notification.enabled");
             boolean externalApi = flag("codepulse.external-api.enabled");
+            boolean relance = flag("codepulse.notification.relance.enabled");
 
             logFlag("Kafka consumer/producer", kafka);
             logFlag("Notification emails", notification);
+            logFlag("Notification relance", relance);
             logFlag("External coding-challenge API", externalApi);
 
             integrationLogService.logEvent(
@@ -44,6 +46,7 @@ public class ConfigAuditLogger implements ApplicationRunner {
                             + " profiles=[" + profiles + "]"
                             + " kafka.enabled=" + kafka
                             + " notification.enabled=" + notification
+                            + " relance.enabled=" + relance
                             + " external-api.enabled=" + externalApi,
                     null
             );

@@ -1,6 +1,7 @@
 package com.stage.backend.repository;
 
 import com.stage.backend.entity.Notification;
+import com.stage.backend.enums.StatutFeedback;
 import com.stage.backend.enums.StatutNotification;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,6 +10,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.ZonedDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -47,6 +50,31 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     Optional<Notification> findByUtilisateurIdAndCodingChallengeId(
             Long utilisateurId,
             Long codingChallengeId
+    );
+
+    @Query("""
+            SELECT n FROM notification n
+            JOIN FETCH n.utilisateur u
+            JOIN FETCH n.codingChallenge c
+            WHERE n.supprime = false
+              AND u.supprime = false
+              AND c.supprime = false
+              AND n.statut IN :statuts
+              AND n.nombreRelances < :maxRelances
+              AND COALESCE(n.dateDerniereRelance, n.dateEnvoi) <= :seuil
+              AND NOT EXISTS (
+                  SELECT 1 FROM feedback f
+                  WHERE f.utilisateur = u
+                    AND f.codingChallenge = c
+                    AND f.supprime = false
+                    AND f.statutFeedback = :soumis
+              )
+            """)
+    List<Notification> findDueForRelance(
+            @Param("statuts") Collection<StatutNotification> statuts,
+            @Param("maxRelances") int maxRelances,
+            @Param("seuil") ZonedDateTime seuil,
+            @Param("soumis") StatutFeedback soumis
     );
 
     @Query("""

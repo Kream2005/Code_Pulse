@@ -41,5 +41,7 @@ public interface NotificationService {
 
     long countNotificationsByStatut(StatutNotification statut);
 
-    public NotificationDto notifyChallengeCompletion(Utilisateur utilisateur, CodingChallenge codingChallenge);
+    NotificationDto notifyChallengeCompletion(Utilisateur utilisateur, CodingChallenge codingChallenge);
+
+    int relancerNotificationsNonLues();
 }
