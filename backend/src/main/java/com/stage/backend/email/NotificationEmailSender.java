@@ -168,6 +168,25 @@ public class NotificationEmailSender {
         log.info("Email sent to='{}' subject='{}'", recipient, subject);
     }
 
+    public void sendDevTestEmail() {
+        Utilisateur probe = new Utilisateur();
+        probe.setEmail("demo.user@codepulse.local");
+        probe.setPrenom("Demo");
+        probe.setNom("User");
+        sendSimpleMessage(
+                probe,
+                "CodePulse - Test email",
+                """
+                Hello Demo User,
+
+                If this appears in /dev/mailbox, local SMTP is working.
+
+                Thank you,
+                CodePulse
+                """
+        );
+    }
+
     private JavaMailSender requireMailSender() {
         JavaMailSender sender = mailSender.getIfAvailable();
         if (sender == null) {
