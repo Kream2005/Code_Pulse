@@ -1,5 +1,6 @@
 package com.stage.backend.controlleur.feedback;
 
+import com.stage.backend.dto.common.SuppressionResponse;
 import com.stage.backend.dto.questionfeedback.CreateQuestionFeedbackRequest;
 import com.stage.backend.dto.questionfeedback.QuestionFeedbackResponse;
 import com.stage.backend.enums.TypeQuestion;
@@ -44,11 +45,13 @@ public class QuestionFeedbackRestController {
 
     @DeleteMapping("/delete-question/{id}")
     @PreAuthorize(SecurityRoles.MANAGE_QUESTIONS)
-    public ResponseEntity<Void> supprimerQuestion(
+    public ResponseEntity<SuppressionResponse> supprimerQuestion(
             @PathVariable Long id
     ) {
-        service.supprimerQuestion(id);
-        return ResponseEntity.noContent().build();
+        SuppressionResponse response = service.supprimerQuestion(id);
+        return response.supprime()
+                ? ResponseEntity.ok(response)
+                : ResponseEntity.status(404).body(response);
     }
 
     @GetMapping("/get-question/{id}")

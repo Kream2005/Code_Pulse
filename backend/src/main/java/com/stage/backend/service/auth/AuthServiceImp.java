@@ -6,13 +6,14 @@ import com.stage.backend.dto.utilisateur.SetupAccountInfoResponse;
 import com.stage.backend.entity.Utilisateur;
 import com.stage.backend.enums.StatutLog;
 import com.stage.backend.enums.TypeLog;
+import com.stage.backend.exception.ErreurAuthentificationException;
+import com.stage.backend.exception.ErreurMetierException;
 import com.stage.backend.repository.UtilisateurRepository;
 import com.stage.backend.security.JwtProperties;
 import com.stage.backend.service.integrationlog.IntegrationLogService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
@@ -22,7 +23,6 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -47,46 +47,58 @@ public class AuthServiceImp implements AuthService {
                     integrationLogService.logEvent(
                             TypeLog.AUTH,
                             StatutLog.ERREUR,
-                            "Login failed for unknown email: " + email,
+                            "Échec connexion — e-mail inconnu : " + email,
                             null
                     );
-                    return new BadCredentialsException("Invalid Credentials");
+                    return new ErreurAuthentificationException(
+                            "IDENTIFIANTS_INVALIDES",
+                            "Identifiants invalides"
+                    );
                 });
 
         if (utilisateur.isSupprime()) {
             integrationLogService.logEvent(
                     TypeLog.AUTH,
                     StatutLog.ERREUR,
-                    "Login failed — account archived: " + email,
+                    "Échec connexion — compte archivé : " + email,
                     null
             );
-            throw new BadCredentialsException("Account is no longer active");
+            throw new ErreurAuthentificationException(
+                    "COMPTE_ARCHIVE",
+                    "Ce compte n'est plus actif"
+            );
         }
 
         if (!utilisateur.isCompteComplet() || utilisateur.getPassword() == null) {
             integrationLogService.logEvent(
                     TypeLog.AUTH,
                     StatutLog.ERREUR,
-                    "Login failed — account setup incomplete: " + email,
+                    "Échec connexion — compte incomplet : " + email,
                     null
             );
-            throw new BadCredentialsException("Account setup not completed");
+            throw new ErreurAuthentificationException(
+                    "COMPTE_INCOMPLET",
+                    "Finalisez d'abord la création de votre compte"
+            );
         }
 
         if (!passwordEncoder.matches(password, utilisateur.getPassword())) {
             integrationLogService.logEvent(
                     TypeLog.AUTH,
                     StatutLog.ERREUR,
-                    "Login failed — invalid password: " + email,
+                    "Échec connexion — mot de passe incorrect : " + email,
                     null
             );
-            throw new BadCredentialsException("Invalid Password");
+            throw new ErreurAuthentificationException(
+                    "MOT_DE_PASSE_INCORRECT",
+                    "Mot de passe incorrect"
+            );
         }
 
         integrationLogService.logEvent(
                 TypeLog.AUTH,
                 StatutLog.SUCCES,
-                "Login successful: " + email,
+                "Connexion réussie : " + email,
                 null
         );
 
@@ -96,22 +108,35 @@ public class AuthServiceImp implements AuthService {
     @Override
     public LoginResponse completeAccount(CompleteAccountRequest request) {
         Utilisateur user = repository.findBySetupToken(request.token())
-                .orElseThrow(() -> new BadCredentialsException("Invalid setup token"));
+                .orElseThrow(() -> new ErreurMetierException(
+                        HttpStatus.BAD_REQUEST,
+                        "JETON_SETUP_INVALIDE",
+                        "Jeton de finalisation de compte invalide"
+                ));
 
         if (user.isCompteComplet()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Account already completed");
+            throw new ErreurMetierException(
+                    HttpStatus.BAD_REQUEST,
+                    "COMPTE_DEJA_COMPLETE",
+                    "Ce compte est déjà finalisé"
+            );
         }
         if (user.getSetupTokenExpiresAt() == null
                 || user.getSetupTokenExpiresAt().isBefore(ZonedDateTime.now())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Setup token expired");
+            throw new ErreurMetierException(
+                    HttpStatus.BAD_REQUEST,
+                    "JETON_SETUP_EXPIRE",
+                    "Le jeton de finalisation a expiré"
+            );
         }
 
         applyMissingProfile(user, request);
 
         if (!StringUtils.hasText(user.getNom()) || !StringUtils.hasText(user.getPrenom())) {
-            throw new ResponseStatusException(
+            throw new ErreurMetierException(
                     HttpStatus.BAD_REQUEST,
-                    "Last name and first name are required to complete the account"
+                    "PROFIL_INCOMPLET",
+                    "Le nom et le prénom sont obligatoires pour finaliser le compte"
             );
         }
 
@@ -125,7 +150,7 @@ public class AuthServiceImp implements AuthService {
         integrationLogService.logEvent(
                 TypeLog.AUTH,
                 StatutLog.SUCCES,
-                "Account completed: " + user.getEmail(),
+                "Compte finalisé : " + user.getEmail(),
                 null
         );
 
@@ -136,10 +161,26 @@ public class AuthServiceImp implements AuthService {
     @Transactional(readOnly = true)
     public SetupAccountInfoResponse getSetupAccountInfo(String token) {
         Utilisateur user = repository.findBySetupToken(token)
-                .orElseThrow(() -> new BadCredentialsException("Invalid setup token"));
+                .orElseThrow(() -> new ErreurMetierException(
+                        HttpStatus.BAD_REQUEST,
+                        "JETON_SETUP_INVALIDE",
+                        "Jeton de finalisation de compte invalide"
+                ));
 
         if (user.isCompteComplet()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Account already completed");
+            throw new ErreurMetierException(
+                    HttpStatus.BAD_REQUEST,
+                    "COMPTE_DEJA_COMPLETE",
+                    "Ce compte est déjà finalisé"
+            );
+        }
+        if (user.getSetupTokenExpiresAt() == null
+                || user.getSetupTokenExpiresAt().isBefore(ZonedDateTime.now())) {
+            throw new ErreurMetierException(
+                    HttpStatus.BAD_REQUEST,
+                    "JETON_SETUP_EXPIRE",
+                    "Le jeton de finalisation a expiré"
+            );
         }
 
         return new SetupAccountInfoResponse(
@@ -160,7 +201,11 @@ public class AuthServiceImp implements AuthService {
         if (!StringUtils.hasText(user.getUserName()) && StringUtils.hasText(request.userName())) {
             String candidate = request.userName().trim();
             if (repository.existsByUserName(candidate)) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username already in use");
+                throw new ErreurMetierException(
+                        HttpStatus.BAD_REQUEST,
+                        "NOM_UTILISATEUR_DEJA_UTILISE",
+                        "Ce nom d'utilisateur est déjà pris"
+                );
             }
             user.setUserName(candidate);
         }

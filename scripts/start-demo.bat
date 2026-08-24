@@ -3,8 +3,10 @@ setlocal EnableExtensions
 cd /d "%~dp0\.."
 set "RESOURCES=%cd%\backend\src\main\resources"
 
-echo ==^> CodePulse STANDALONE mode (Postgres + HTTP publisher, no Kafka/Mailpit/Docker)
+echo ==^> CodePulse STANDALONE mode (Postgres + Kafka binary + embedded SMTP, no Docker)
 echo     Requires: PostgreSQL on localhost:5432  (scripts\create-db.sql once)
+echo     Requires: Kafka binary — set KAFKA_HOME to the unpacked folder
+echo     Email: GreenMail on :1025 — GET /dev/mailbox as admin@codepulse.local
 echo     App:  http://localhost:4200
 echo     API:  http://localhost:8080
 echo     Accounts:
@@ -45,11 +47,20 @@ if not exist "%RESOURCES%\private.key" (
   openssl rsa -in "%RESOURCES%\private.key" -pubout -out "%RESOURCES%\public.key"
 )
 
-if exist "challenge-publisher\.venv\Scripts\python.exe" (
-  start "CodePulse-Publisher" cmd /k "cd /d "%cd%\challenge-publisher" && .venv\Scripts\python.exe publisher.py --mode http --interval 20 --batch-size 5 --email demo.user@codepulse.local --user-id 90002"
-) else (
-  start "CodePulse-Publisher" cmd /k "cd /d "%cd%\challenge-publisher" && python publisher.py --mode http --interval 20 --batch-size 5 --email demo.user@codepulse.local --user-id 90002"
+echo Starting local Kafka...
+call "%~dp0kafka-start.bat"
+if errorlevel 1 (
+  echo Kafka did not start. Set KAFKA_HOME and JAVA_HOME, then retry.
+  exit /b 1
 )
+
+if not exist "challenge-publisher\.venv\Scripts\python.exe" (
+  echo Creating publisher venv...
+  python -m venv "challenge-publisher\.venv"
+  "challenge-publisher\.venv\Scripts\pip.exe" install -r "challenge-publisher\requirements.txt"
+)
+
+start "CodePulse-Publisher" cmd /k "cd /d "%cd%\challenge-publisher" && .venv\Scripts\python.exe publisher.py --mode both --interval 20 --batch-size 5 --email demo.user@codepulse.local --user-id 90002"
 
 start "CodePulse-API" cmd /k "cd /d "%cd%\backend" && mvnw.cmd spring-boot:run -Dspring-boot.run.arguments=--codepulse.mode=standalone"
 timeout /t 8 /nobreak >nul
@@ -63,5 +74,6 @@ start "CodePulse-UI" cmd /k "cd /d "%cd%" && npm start"
 
 echo.
 echo Open http://localhost:4200 when Vite is ready.
+echo Captured emails: GET http://localhost:8080/dev/mailbox  (login as admin)
 echo Close the terminal windows to stop the app.
 endlocal

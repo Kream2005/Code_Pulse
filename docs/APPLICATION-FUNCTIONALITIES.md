@@ -6,10 +6,12 @@ Plateforme de collecte et d’analyse des feedbacks après coding challenges.
 
 | Mode | Propriété | Prérequis | Ingestion challenges |
 |------|-----------|-----------|----------------------|
-| Standalone | `codepulse.mode=standalone` | PostgreSQL, JDK, Node | HTTP publisher → traitement direct |
+| Standalone | `codepulse.mode=standalone` | PostgreSQL, JDK, Node, binaire Kafka local | Kafka (+ publisher HTTP) |
 | Full | `codepulse.mode=full` | PostgreSQL, Kafka (+ Mailpit optionnel) | Kafka (et/ou sync HTTP → Kafka) |
 
 PostgreSQL est **toujours** utilisé. Kafka et les e-mails restent commutables via `codepulse.kafka.enabled` / `codepulse.notification.enabled`.
+
+Les notifications non lues sont **relancées automatiquement** (délai 24h, max 3, nouveau lien compte ou feedback).
 
 ---
 

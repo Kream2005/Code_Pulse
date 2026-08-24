@@ -21,6 +21,12 @@ public class Notification {
     @Column(name = "date_envoi")
     private ZonedDateTime dateEnvoi;
 
+    @Column(name = "date_derniere_relance")
+    private ZonedDateTime dateDerniereRelance;
+
+    @Column(name = "nombre_relances", nullable = false)
+    private int nombreRelances = 0;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "statut")
     private StatutNotification statut;

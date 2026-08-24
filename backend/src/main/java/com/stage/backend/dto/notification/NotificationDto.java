@@ -6,6 +6,8 @@ import java.time.ZonedDateTime;
 public record NotificationDto(
         Long id,
         ZonedDateTime dateEnvoi,
+        ZonedDateTime dateDerniereRelance,
+        int nombreRelances,
         StatutNotification statut,
         Long utilisateurId,
         Long codingChallengeId,

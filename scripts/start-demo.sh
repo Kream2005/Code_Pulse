@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Standalone mode: Postgres + Java + Node (no Kafka, Mailpit, or Docker).
+# Standalone / demo mode: Postgres + local Kafka binary + embedded SMTP (no Docker).
 # Toggle: codepulse.mode=standalone in backend application.properties
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -85,6 +85,21 @@ ensure_node() {
   echo "    Node: $(node -v) ($(command -v node))"
 }
 
+ensure_publisher() {
+  local pub="$ROOT/challenge-publisher"
+  if [[ -x "$pub/.venv/bin/python" ]]; then
+    PUB_PY="$pub/.venv/bin/python"
+  else
+    PUB_PY="python3"
+  fi
+  if ! "$PUB_PY" -c "import kafka" 2>/dev/null; then
+    echo "==> Installing kafka-python for the challenge publisher"
+    python3 -m venv "$pub/.venv"
+    "$pub/.venv/bin/pip" install -q -r "$pub/requirements.txt"
+    PUB_PY="$pub/.venv/bin/python"
+  fi
+}
+
 JAVA_HOME="$(resolve_java_home)" || {
   echo "ERROR: JDK 21 is required but was not found."
   echo "Install JDK 21, or set CODEPULSE_JAVA_HOME=/path/to/jdk-21"
@@ -96,9 +111,11 @@ echo "    Java: $JAVA_HOME ($("$JAVA_HOME/bin/java" -version 2>&1 | head -1))"
 
 ensure_local_config
 ensure_node
+ensure_publisher
 
-echo "==> CodePulse STANDALONE mode (Postgres + HTTP publisher, Kafka/mail off)"
-echo "    Requires: PostgreSQL :5432 (scripts/create-db.sql once)"
+echo "==> CodePulse STANDALONE mode (Postgres + Kafka binary + embedded SMTP)"
+echo "    Requires: PostgreSQL :5432 (scripts/create-db.sql once), Kafka binary (KAFKA_HOME)"
+echo "    Email: GreenMail on :1025 (no Docker) — GET /dev/mailbox as admin@codepulse.local"
 echo "    Seed: challenges, candidates, questions, feedbacks, inbox notifs, password resets"
 echo "    App:  http://localhost:4200"
 echo "    API:  http://localhost:8080"
@@ -110,6 +127,9 @@ echo "      MANAGER_RH:            manager.rh@codepulse.local / Manager1234!"
 echo "      ADMIN_CODEPULSE:       admin@codepulse.local / Admin1234!"
 echo
 
+echo "==> Starting local Kafka"
+"$ROOT/scripts/kafka-start.sh"
+
 fuser -k 8080/tcp 2>/dev/null || true
 fuser -k 4200/tcp 2>/dev/null || true
 fuser -k 9999/tcp 2>/dev/null || true
@@ -118,17 +138,10 @@ sleep 1
 
 cd "$ROOT/challenge-publisher"
 PUB_PID=""
-if [[ -x .venv/bin/python ]]; then
-  .venv/bin/python publisher.py --mode http --interval 20 --batch-size 5 \
-    --email "${TARGET_EMAIL:-demo.user@codepulse.local}" \
-    --user-id "${TARGET_USER_ID:-90002}" &
-  PUB_PID=$!
-else
-  python3 publisher.py --mode http --interval 20 --batch-size 5 \
-    --email "${TARGET_EMAIL:-demo.user@codepulse.local}" \
-    --user-id "${TARGET_USER_ID:-90002}" &
-  PUB_PID=$!
-fi
+"$PUB_PY" publisher.py --mode both --interval 20 --batch-size 5 \
+  --email "${TARGET_EMAIL:-demo.user@codepulse.local}" \
+  --user-id "${TARGET_USER_ID:-90002}" &
+PUB_PID=$!
 
 cd "$ROOT/backend"
 : >"$BACKEND_LOG"

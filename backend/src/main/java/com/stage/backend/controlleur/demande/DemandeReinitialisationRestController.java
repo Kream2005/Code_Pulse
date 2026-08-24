@@ -1,6 +1,7 @@
 package com.stage.backend.controlleur.demande;
 
 import com.stage.backend.dto.demande.DemandeReinitialisationDto;
+import com.stage.backend.dto.demande.DemandeTraitementResponse;
 import com.stage.backend.dto.demande.SetTemporaryPasswordRequest;
 import com.stage.backend.enums.StatutDemandeReinit;
 import com.stage.backend.security.SecurityRoles;
@@ -42,13 +43,13 @@ public class DemandeReinitialisationRestController {
 
     @PostMapping("/{id}/send-link")
     @PreAuthorize(SecurityRoles.ADMIN_CODEPULSE)
-    public ResponseEntity<DemandeReinitialisationDto> envoyerLien(@PathVariable Long id) {
+    public ResponseEntity<DemandeTraitementResponse> envoyerLien(@PathVariable Long id) {
         return ResponseEntity.ok(service.envoyerLien(id));
     }
 
     @PostMapping("/{id}/temporary-password")
     @PreAuthorize(SecurityRoles.ADMIN_CODEPULSE)
-    public ResponseEntity<DemandeReinitialisationDto> temporaryPassword(
+    public ResponseEntity<DemandeTraitementResponse> temporaryPassword(
             @PathVariable Long id,
             @Valid @RequestBody SetTemporaryPasswordRequest request
     ) {
@@ -57,7 +58,7 @@ public class DemandeReinitialisationRestController {
 
     @PostMapping("/{id}/reject")
     @PreAuthorize(SecurityRoles.ADMIN_CODEPULSE)
-    public ResponseEntity<DemandeReinitialisationDto> rejeter(@PathVariable Long id) {
+    public ResponseEntity<DemandeTraitementResponse> rejeter(@PathVariable Long id) {
         return ResponseEntity.ok(service.rejeter(id));
     }
 }

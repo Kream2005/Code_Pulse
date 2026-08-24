@@ -62,6 +62,49 @@ public class NotificationEmailSender {
         );
     }
 
+    public void sendChallengeRelanceEmail(
+            Utilisateur user,
+            CodingChallenge challenge,
+            String actionUrl,
+            int relanceNumero
+    ) {
+        if (!notificationProperties.enabled()) {
+            log.info(
+                    "Email delivery disabled. Relance #{} stored for user='{}' challenge='{}'",
+                    relanceNumero,
+                    user.getEmail(),
+                    challenge.getTitre()
+            );
+            return;
+        }
+
+        String recipient = resolveRecipient(user);
+        if (!StringUtils.hasText(recipient)) {
+            log.warn("No email recipient for relance challenge='{}'. Skipping send.", challenge.getTitre());
+            return;
+        }
+
+        JavaMailSender sender = requireMailSender();
+        if (sender == null) {
+            return;
+        }
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(notificationProperties.from());
+        message.setTo(recipient);
+        message.setSubject("CodePulse - Reminder: feedback requested for: " + challenge.getTitre());
+        message.setText(buildRelanceBody(user, challenge, actionUrl, relanceNumero));
+
+        sender.send(message);
+        log.info(
+                "Relance #{} email sent to='{}' (challenge user='{}') challenge='{}'",
+                relanceNumero,
+                recipient,
+                user.getEmail(),
+                challenge.getTitre()
+        );
+    }
+
     public void sendPasswordResetLink(Utilisateur user, String actionUrl) {
         sendSimpleMessage(
                 user,
@@ -125,6 +168,25 @@ public class NotificationEmailSender {
         log.info("Email sent to='{}' subject='{}'", recipient, subject);
     }
 
+    public void sendDevTestEmail() {
+        Utilisateur probe = new Utilisateur();
+        probe.setEmail("demo.user@codepulse.local");
+        probe.setPrenom("Demo");
+        probe.setNom("User");
+        sendSimpleMessage(
+                probe,
+                "CodePulse - Test email",
+                """
+                Hello Demo User,
+
+                If this appears in /dev/mailbox, local SMTP is working.
+
+                Thank you,
+                CodePulse
+                """
+        );
+    }
+
     private JavaMailSender requireMailSender() {
         JavaMailSender sender = mailSender.getIfAvailable();
         if (sender == null) {
@@ -158,6 +220,31 @@ public class NotificationEmailSender {
                 """.formatted(
                 safe(user.getPrenom()),
                 safe(user.getNom()),
+                challenge.getTitre(),
+                actionUrl
+        );
+    }
+
+    private String buildRelanceBody(
+            Utilisateur user,
+            CodingChallenge challenge,
+            String actionUrl,
+            int relanceNumero
+    ) {
+        return """
+                Hello %s %s,
+
+                Reminder #%s: we have not received your feedback for the coding challenge "%s".
+
+                Previous links are no longer valid. Please use this new link:
+                %s
+
+                Thank you,
+                CodePulse
+                """.formatted(
+                safe(user.getPrenom()),
+                safe(user.getNom()),
+                relanceNumero,
                 challenge.getTitre(),
                 actionUrl
         );

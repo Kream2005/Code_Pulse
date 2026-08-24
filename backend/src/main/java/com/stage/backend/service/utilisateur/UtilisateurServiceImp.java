@@ -1,12 +1,15 @@
 package com.stage.backend.service.utilisateur;
 
+import com.stage.backend.dto.common.SuppressionResponse;
 import com.stage.backend.dto.utilisateur.CreateUtilisateurRequest;
+import com.stage.backend.dto.utilisateur.PromoteRoleResponse;
 import com.stage.backend.dto.utilisateur.UpdateUtilisateurRequest;
 import com.stage.backend.dto.utilisateur.UtilisateurDto;
 import com.stage.backend.entity.Utilisateur;
 import com.stage.backend.enums.Role;
 import com.stage.backend.enums.StatutLog;
 import com.stage.backend.enums.TypeLog;
+import com.stage.backend.exception.ErreurMetierException;
 import com.stage.backend.mapper.UtilisateurMapper;
 import com.stage.backend.repository.UtilisateurRepository;
 import com.stage.backend.service.integrationlog.IntegrationLogService;
@@ -40,18 +43,27 @@ public class UtilisateurServiceImp implements UtilisateurService{
         log.info("adding user with email: '{}'", request.email());
 
         if (request.role() == Role.USER) {
-            throw new ResponseStatusException(
+            throw new ErreurMetierException(
                     HttpStatus.BAD_REQUEST,
-                    "Collaborateurs are provisioned from coding-challenge events, not created manually"
+                    "ROLE_NON_AUTORISE",
+                    "Les collaborateurs sont provisionnés via les événements coding-challenge, pas créés manuellement"
             );
         }
         if (request.role() != Role.MANAGER_RH
                 && request.role() != Role.ADMIN_CODING_CHALLENGE
                 && request.role() != Role.ADMIN_CODEPULSE) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported role: " + request.role());
+            throw new ErreurMetierException(
+                    HttpStatus.BAD_REQUEST,
+                    "ROLE_NON_SUPPORTE",
+                    "Rôle non supporté : " + request.role()
+            );
         }
         if (repository.existsByEmail(request.email())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email already in use");
+            throw new ErreurMetierException(
+                    HttpStatus.BAD_REQUEST,
+                    "EMAIL_DEJA_UTILISE",
+                    "Cet e-mail est déjà utilisé"
+            );
         }
 
         Utilisateur user = new Utilisateur();
@@ -99,7 +111,7 @@ public class UtilisateurServiceImp implements UtilisateurService{
     }
 
     @Override
-    public boolean supprimerUtilisateur(Long userId) {
+    public SuppressionResponse supprimerUtilisateur(Long userId) {
         return repository.findById(userId).map(user -> {
             user.setSupprime(true);
             user.setStatus(false);
@@ -107,11 +119,25 @@ public class UtilisateurServiceImp implements UtilisateurService{
             integrationLogService.logEvent(
                     TypeLog.GESTION_UTILISATEUR,
                     StatutLog.SUCCES,
-                    "User soft-deleted (feedbacks kept): " + user.getEmail(),
+                    "Utilisateur supprimé (soft-delete, feedbacks conservés) : " + user.getEmail(),
                     null
             );
-            return true;
-        }).orElse(false);
+            return new SuppressionResponse(
+                    true,
+                    userId,
+                    "UTILISATEUR",
+                    true,
+                    0,
+                    "Utilisateur archivé avec succès (feedbacks conservés)"
+            );
+        }).orElseGet(() -> new SuppressionResponse(
+                false,
+                userId,
+                "UTILISATEUR",
+                true,
+                0,
+                "Utilisateur introuvable : id=" + userId
+        ));
     }
 
     @Override
@@ -162,22 +188,27 @@ public class UtilisateurServiceImp implements UtilisateurService{
     }
 
     @Override
-    public UtilisateurDto promoteRole(Long userId, Role role) {
+    public PromoteRoleResponse promoteRole(Long userId, Role role) {
         Utilisateur user = repository.findById(userId).orElseThrow(
                 () -> new EntityNotFoundException(
-                        "User with id: " + userId + " was not found"
+                        "Utilisateur introuvable : id=" + userId
                 )
         );
-        Role previousRole = user.getRole();
+        Role rolePrecedent = user.getRole();
         user.setRole(role);
         Utilisateur saved = repository.save(user);
         integrationLogService.logEvent(
                 TypeLog.GESTION_UTILISATEUR,
                 StatutLog.SUCCES,
-                "Role changed for " + saved.getEmail() + ": " + previousRole + " -> " + role,
+                "Rôle modifié pour " + saved.getEmail() + " : " + rolePrecedent + " → " + role,
                 null
         );
-        return mapper.toUtilisateurDto(saved);
+        return new PromoteRoleResponse(
+                mapper.toUtilisateurDto(saved),
+                rolePrecedent,
+                role,
+                "Rôle mis à jour : " + rolePrecedent + " → " + role
+        );
     }
 
     @Override

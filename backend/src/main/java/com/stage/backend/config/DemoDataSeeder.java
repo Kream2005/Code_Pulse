@@ -29,6 +29,7 @@ import org.springframework.stereotype.Component;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Component
 @Profile("standalone")
@@ -149,6 +150,7 @@ public class DemoDataSeeder implements ApplicationRunner {
         }
         List<CodingChallenge> challenges = seedChallenges();
         seedNotifications(demoUser, candidates, challenges);
+        seedRelanceFixtures(challenges);
         seedFeedbacks(candidates, challenges);
         seedDemandes(candidates);
 
@@ -269,6 +271,52 @@ public class DemoDataSeeder implements ApplicationRunner {
         log.info("Demo notifications ensured for demo.user and sample candidates");
     }
 
+    private void seedRelanceFixtures(List<CodingChallenge> challenges) {
+        if (challenges.size() < 2) {
+            return;
+        }
+        Utilisateur pending = utilisateurRepository.findByEmail("pending.setup@codepulse.demo")
+                .orElseGet(() -> {
+                    Utilisateur u = new Utilisateur();
+                    u.setEmail("pending.setup@codepulse.demo");
+                    u.setPrenom("Pending");
+                    u.setNom("Setup");
+                    u.setUserName("pending.setup");
+                    u.setPassword(null);
+                    u.setRole(Role.USER);
+                    u.setCompteComplet(false);
+                    u.setStatus(false);
+                    u.setExternalId(93001L);
+                    u.setSetupToken(UUID.randomUUID().toString());
+                    u.setSetupTokenExpiresAt(ZonedDateTime.now().minusHours(2));
+                    return utilisateurRepository.save(u);
+                });
+        Utilisateur demoUser = utilisateurRepository.findByEmail("demo.user@codepulse.local").orElse(null);
+        ensureOverdueNotification(pending, challenges.get(0));
+        if (demoUser != null) {
+            ensureOverdueNotification(demoUser, challenges.get(challenges.size() - 1));
+        }
+    }
+
+    private void ensureOverdueNotification(Utilisateur user, CodingChallenge challenge) {
+        ZonedDateTime overdue = ZonedDateTime.now().minusHours(25);
+        notificationRepository
+                .findByUtilisateurIdAndCodingChallengeId(user.getId(), challenge.getId())
+                .ifPresentOrElse(n -> {
+                    if (n.getStatut() != StatutNotification.LUE && n.getNombreRelances() == 0) {
+                        n.setDateEnvoi(overdue);
+                        notificationRepository.save(n);
+                    }
+                }, () -> {
+                    Notification n = new Notification();
+                    n.setUtilisateur(user);
+                    n.setCodingChallenge(challenge);
+                    n.setDateEnvoi(overdue);
+                    n.setStatut(StatutNotification.ENVOYEE);
+                    notificationRepository.save(n);
+                });
+    }
+
     private void seedFeedbacks(List<Utilisateur> candidates, List<CodingChallenge> challenges) {
         long existing = feedbackRepository.countBySupprimeFalse();
         if (existing >= TARGET_FEEDBACKS || challenges.isEmpty() || candidates.isEmpty()) {
@@ -380,13 +428,22 @@ public class DemoDataSeeder implements ApplicationRunner {
     }
 
     private void ensureNotification(Utilisateur user, CodingChallenge challenge, StatutNotification statut) {
+        ensureNotification(user, challenge, statut, ZonedDateTime.now().minusMinutes(30));
+    }
+
+    private void ensureNotification(
+            Utilisateur user,
+            CodingChallenge challenge,
+            StatutNotification statut,
+            ZonedDateTime dateEnvoi
+    ) {
         notificationRepository
                 .findByUtilisateurIdAndCodingChallengeId(user.getId(), challenge.getId())
                 .orElseGet(() -> {
                     Notification n = new Notification();
                     n.setUtilisateur(user);
                     n.setCodingChallenge(challenge);
-                    n.setDateEnvoi(ZonedDateTime.now().minusMinutes(30));
+                    n.setDateEnvoi(dateEnvoi);
                     n.setStatut(statut);
                     return notificationRepository.save(n);
                 });

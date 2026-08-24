@@ -1,5 +1,6 @@
 package com.stage.backend.service.reponsefeedback;
 
+import com.stage.backend.dto.common.SuppressionResponse;
 import com.stage.backend.dto.reponsefeedback.CreateReponseFeedbackRequest;
 import com.stage.backend.dto.reponsefeedback.ReponseFeedbackResponse;
 import org.springframework.data.domain.Page;
@@ -10,7 +11,7 @@ public interface ReponseFeedbackService {
 
     ReponseFeedbackResponse ajouterReponse(CreateReponseFeedbackRequest request);
 
-    boolean supprimerReponse(Long reponseId);
+    SuppressionResponse supprimerReponse(Long reponseId);
 
     ReponseFeedbackResponse getReponse(Long reponseId);
 

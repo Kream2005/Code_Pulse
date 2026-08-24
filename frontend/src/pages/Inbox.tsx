@@ -165,7 +165,12 @@ export default function Inbox({ admin = false }: { admin?: boolean }) {
                 <StatusBadge status={n.statut} />
               </td>
               <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
-                {n.dateEnvoi ? new Date(n.dateEnvoi).toLocaleString() : '—'}
+                <div>{n.dateEnvoi ? new Date(n.dateEnvoi).toLocaleString() : '—'}</div>
+                {(n.nombreRelances ?? 0) > 0 && (
+                  <div className="mt-0.5 text-xs text-amber-600 dark:text-amber-400">
+                    {t('inbox.reminded', { count: n.nombreRelances ?? 0 })}
+                  </div>
+                )}
               </td>
               <td className="px-4 py-3">
                 <div className="flex flex-wrap gap-2">

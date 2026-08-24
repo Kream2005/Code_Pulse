@@ -41,12 +41,12 @@ Kafka is a standard async backbone for system-to-system events in this kind of p
 
 ## When we do **not** require Kafka
 
-`codepulse.mode=standalone` keeps **PostgreSQL** and ingests via HTTP (publisher `--mode http` → direct process). Same product rules for restricted work PCs that cannot run a broker.
+`codepulse.mode=standalone` still uses **PostgreSQL**. Challenge events go through the **local Kafka binary** (same topics as full). HTTP ingest remains available if the broker is down and you switch `codepulse.kafka.enabled=false`.
 
-| Mode | DB | Messaging |
-|------|----|-----------|
-| `standalone` | PostgreSQL | Direct HTTP ingest |
-| `full` | PostgreSQL | Kafka (+ optional Mailpit) |
+| Mode | DB | Messaging | Email |
+|------|----|-----------|-------|
+| `standalone` | PostgreSQL | Local Kafka binary (+ HTTP publisher) | Embedded GreenMail (no Docker) |
+| `full` | PostgreSQL | Kafka (+ optional Mailpit Docker) | SMTP → Mailpit |
 
 Toggle:
 
@@ -58,4 +58,4 @@ codepulse.mode=full   # or standalone
 
 ## Management summary
 
-Use Kafka in production-like environments because it **decouples**, **buffers spikes**, **acknowledges producers fast**, **survives API downtime**, and supports **retries/DLT** — backed by measured intake gains on this stack (see [`BENCHMARK-RESULTS.md`](./BENCHMARK-RESULTS.md)). Keep standalone (Postgres + direct) for constrained desktops.
+Use Kafka in production-like environments because it **decouples**, **buffers spikes**, **acknowledges producers fast**, **survives API downtime**, and supports **retries/DLT** — backed by measured intake gains on this stack (see [`BENCHMARK-RESULTS.md`](./BENCHMARK-RESULTS.md)). Demo / work PCs run the same Kafka path with a local binary (no Docker).
