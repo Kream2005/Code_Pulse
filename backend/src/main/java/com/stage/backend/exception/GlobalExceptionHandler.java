@@ -3,6 +3,7 @@ package com.stage.backend.exception;
 import com.stage.backend.enums.StatutLog;
 import com.stage.backend.enums.TypeLog;
 import com.stage.backend.service.integrationlog.IntegrationLogService;
+import com.stage.backend.kafka.exception.InvalidCodingChallengeEventException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +51,33 @@ public class GlobalExceptionHandler {
                 null
         );
         return error(HttpStatus.FORBIDDEN, "Access denied", request.getRequestURI());
+    }
+
+    @ExceptionHandler(InvalidCodingChallengeEventException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, Object> handleInvalidChallengeEvent(
+            InvalidCodingChallengeEventException ex,
+            HttpServletRequest request
+    ) {
+        Map<String, Object> body = error(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getRequestURI());
+        body.put("errorCode", "VALIDATION_ERROR");
+        return body;
+    }
+
+    @ExceptionHandler(ChallengeIngestConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public Map<String, Object> handleIngestConflict(
+            ChallengeIngestConflictException ex,
+            HttpServletRequest request
+    ) {
+        Map<String, Object> body = error(HttpStatus.CONFLICT, ex.getMessage(), request.getRequestURI());
+        body.put("errorCode", ex.getErrorCode());
+        body.put("incomingUserExternalId", ex.getIncomingUserExternalId());
+        body.put("incomingEmail", ex.getIncomingEmail());
+        body.put("existingUserId", ex.getExistingUserId());
+        body.put("existingUserExternalId", ex.getExistingUserExternalId());
+        body.put("existingEmail", ex.getExistingEmail());
+        return body;
     }
 
     @ExceptionHandler(EntityNotFoundException.class)

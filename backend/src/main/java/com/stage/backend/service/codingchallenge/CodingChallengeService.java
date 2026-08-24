@@ -1,5 +1,9 @@
 package com.stage.backend.service.codingchallenge;
 
+import com.stage.backend.dto.codingchallenge.ChallengeDeleteResponse;
+import com.stage.backend.dto.codingchallenge.ChallengeIngestBatchResponse;
+import com.stage.backend.dto.codingchallenge.ChallengeIngestItemResult;
+import com.stage.backend.dto.codingchallenge.ChallengeSyncResponse;
 import com.stage.backend.dto.codingchallenge.CodingChallengeDto;
 import com.stage.backend.kafka.event.CodingChallengeEvent;
 import org.springframework.data.domain.Page;
@@ -10,12 +14,13 @@ import java.util.List;
 public interface CodingChallengeService {
     void processIncomingChallenge(CodingChallengeEvent event);
 
+    ChallengeIngestItemResult processIncomingChallengeDetailed(CodingChallengeEvent event, int index);
+
     CodingChallengeDto getCodingChallenge(Long challengeId);
 
     List<CodingChallengeDto> getAllCodingChallenges();
 
-    /** Soft-delete: keeps feedbacks readable for admins. */
-    boolean supprimerCodingChallenge(Long challengeId);
+    ChallengeDeleteResponse supprimerCodingChallenge(Long challengeId);
 
     Page<CodingChallengeDto> getCodingChallengesPage(int page, int size);
 
@@ -33,7 +38,7 @@ public interface CodingChallengeService {
 
     long countCodingChallenges();
 
-    int synchroniserChallenges();
+    ChallengeSyncResponse synchroniserChallenges();
 
-    int ingestBatch(List<CodingChallengeEvent> events);
+    ChallengeIngestBatchResponse ingestBatch(List<CodingChallengeEvent> events);
 }

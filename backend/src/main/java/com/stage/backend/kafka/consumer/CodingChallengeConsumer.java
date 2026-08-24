@@ -43,7 +43,15 @@ public class CodingChallengeConsumer {
                 offset
         );
 
-        service.processIncomingChallenge(event);
+        var result = service.processIncomingChallengeDetailed(event, (int) offset);
+        log.info(
+                "Kafka ingest result status={} case={} testExternalId={} userExternalId={} errors={}",
+                result.status(),
+                result.entityCase(),
+                result.testExternalId(),
+                result.userExternalId(),
+                result.errors()
+        );
         acknowledgment.acknowledge();
     }
 }

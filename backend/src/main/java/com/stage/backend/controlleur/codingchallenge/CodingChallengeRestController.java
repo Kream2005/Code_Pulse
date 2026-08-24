@@ -1,5 +1,8 @@
 package com.stage.backend.controlleur.codingchallenge;
 
+import com.stage.backend.dto.codingchallenge.ChallengeDeleteResponse;
+import com.stage.backend.dto.codingchallenge.ChallengeIngestBatchResponse;
+import com.stage.backend.dto.codingchallenge.ChallengeSyncResponse;
 import com.stage.backend.dto.codingchallenge.CodingChallengeDto;
 import com.stage.backend.kafka.event.CodingChallengeEvent;
 import com.stage.backend.security.SecurityRoles;
@@ -17,7 +20,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/coding-challenges")
@@ -29,23 +31,27 @@ public class CodingChallengeRestController {
 
     @PostMapping("/synchroniser")
     @PreAuthorize(SecurityRoles.ADMIN_CHALLENGE)
-    public ResponseEntity<Map<String, Integer>> synchroniserChallenge() {
-        int published = service.synchroniserChallenges();
-        return ResponseEntity.status(HttpStatus.ACCEPTED).body(Map.of("published", published));
+    public ResponseEntity<ChallengeSyncResponse> synchroniserChallenge() {
+        ChallengeSyncResponse response = service.synchroniserChallenges();
+        HttpStatus status = response.failed() > 0 ? HttpStatus.MULTI_STATUS : HttpStatus.ACCEPTED;
+        return ResponseEntity.status(status).body(response);
     }
 
     @PostMapping("/ingest-batch")
     @PreAuthorize(SecurityRoles.ADMIN_CHALLENGE)
-    public ResponseEntity<Map<String, Integer>> ingestBatch(@RequestBody List<CodingChallengeEvent> events) {
-        int processed = service.ingestBatch(events);
-        return ResponseEntity.ok(Map.of("processed", processed));
+    public ResponseEntity<ChallengeIngestBatchResponse> ingestBatch(@RequestBody List<CodingChallengeEvent> events) {
+        ChallengeIngestBatchResponse response = service.ingestBatch(events);
+        HttpStatus status = response.failed() > 0 ? HttpStatus.MULTI_STATUS : HttpStatus.OK;
+        return ResponseEntity.status(status).body(response);
     }
 
     @DeleteMapping("/delete-coding-challenge/{id}")
     @PreAuthorize(SecurityRoles.ADMIN_CHALLENGE)
-    public ResponseEntity<Boolean> supprimerCodingChallenge(@PathVariable Long id) {
-        boolean deleted = service.supprimerCodingChallenge(id);
-        return deleted ? ResponseEntity.ok(true) : ResponseEntity.notFound().build();
+    public ResponseEntity<ChallengeDeleteResponse> supprimerCodingChallenge(@PathVariable Long id) {
+        ChallengeDeleteResponse response = service.supprimerCodingChallenge(id);
+        return response.deleted()
+                ? ResponseEntity.ok(response)
+                : ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
     @GetMapping("/get-coding-challenge/{id}")

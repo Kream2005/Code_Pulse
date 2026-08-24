@@ -43,6 +43,20 @@ codepulse.notification.relance.check-interval=15m
 codepulse.notification.relance.initial-delay=45s
 codepulse.notification.relance.max=3
 
+# Optional: point demo.user at your real inbox for notification testing (local only, gitignored application.properties).
+# codepulse.demo.user-email=you@gmail.com
+#
+# Real Gmail SMTP (disable embedded GreenMail first):
+# codepulse.notification.embedded-smtp=false
+# spring.mail.host=smtp.gmail.com
+# spring.mail.port=587
+# spring.mail.username=you@gmail.com
+# spring.mail.password=your-app-password
+# spring.mail.properties.mail.smtp.auth=true
+# spring.mail.properties.mail.smtp.starttls.enable=true
+# codepulse.notification.from=you@gmail.com
+# codepulse.notification.to=
+
 codepulse.kafka.topics.coding-challenges=coding-challenges
 codepulse.kafka.topics.coding-challenges-dlt=coding-challenges-dlt
 codepulse.kafka.consumer-group=codepulse-dev
