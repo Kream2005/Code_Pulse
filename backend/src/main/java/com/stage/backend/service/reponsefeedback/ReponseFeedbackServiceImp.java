@@ -1,5 +1,6 @@
 package com.stage.backend.service.reponsefeedback;
 
+import com.stage.backend.dto.common.SuppressionResponse;
 import com.stage.backend.dto.reponsefeedback.CreateReponseFeedbackRequest;
 import com.stage.backend.dto.reponsefeedback.ReponseFeedbackResponse;
 import com.stage.backend.entity.ReponseFeedback;
@@ -45,18 +46,32 @@ public class ReponseFeedbackServiceImp implements ReponseFeedbackService {
     }
 
     @Override
-    public boolean supprimerReponse(Long reponseId) {
+    public SuppressionResponse supprimerReponse(Long reponseId) {
         return repository.findById(reponseId).map(r -> {
             r.setSupprime(true);
             repository.save(r);
             integrationLogService.logEvent(
                     TypeLog.FEEDBACK,
                     StatutLog.SUCCES,
-                    "Response soft-deleted: " + r.getId(),
+                    "Réponse supprimée (soft-delete) : id=" + r.getId(),
                     null
             );
-            return true;
-        }).orElse(false);
+            return new SuppressionResponse(
+                    true,
+                    reponseId,
+                    "REPONSE_FEEDBACK",
+                    true,
+                    0,
+                    "Réponse archivée avec succès"
+            );
+        }).orElseGet(() -> new SuppressionResponse(
+                false,
+                reponseId,
+                "REPONSE_FEEDBACK",
+                true,
+                0,
+                "Réponse introuvable : id=" + reponseId
+        ));
     }
 
     @Override

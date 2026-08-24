@@ -1,5 +1,6 @@
 package com.stage.backend.service.codingchallenge;
 
+import com.stage.backend.dto.notification.NotificationCreationResult;
 import com.stage.backend.dto.codingchallenge.ChallengeDeleteResponse;
 import com.stage.backend.dto.codingchallenge.ChallengeIngestBatchResponse;
 import com.stage.backend.dto.codingchallenge.ChallengeIngestItemResult;
@@ -93,15 +94,11 @@ public class CodingChallengeServiceImp implements CodingChallengeService {
 
             IngestEntityCase entityCase = toEntityCase(challengeAlreadyExisted, userAlreadyExisted);
 
-            boolean notificationAlreadyExisted = notificationRepository
-                    .findByUtilisateurIdAndCodingChallengeId(
-                            userOutcome.user().getId(),
-                            codingChallenge.getId()
-                    )
-                    .isPresent();
-
-            notificationService.notifyChallengeCompletion(userOutcome.user(), codingChallenge);
-
+            var notificationOutcome = notificationService.notifyChallengeCompletion(
+                    userOutcome.user(),
+                    codingChallenge
+            );
+            boolean notificationAlreadyExisted = notificationOutcome.dejaExistante();
             boolean notificationCreated = !notificationAlreadyExisted;
 
             List<String> messages = buildSuccessMessages(
@@ -110,19 +107,21 @@ public class CodingChallengeServiceImp implements CodingChallengeService {
                     userAlreadyExisted,
                     notificationCreated,
                     notificationAlreadyExisted,
-                    userOutcome.fieldsUpdated()
+                    userOutcome.fieldsUpdated(),
+                    notificationOutcome
             );
 
             integrationLogService.logSyncEvent(
                     codingChallenge.getId(),
                     StatutLog.SUCCES,
-                    "Ingest OK — case=" + entityCase
+                    "Ingestion OK — cas=" + entityCase
                             + " testExternalId=" + event.test().id()
                             + " userExternalId=" + event.user().id()
             );
 
             log.info(
-                    "Challenge ingest OK [{}] case={} test='{}' user='{}'",
+                    "Ingestion challenge OK [{}] cas={} test='{}' user='{}'",
+                    index,
                     entityCase,
                     event.test().titre(),
                     event.user().email()
@@ -149,11 +148,11 @@ public class CodingChallengeServiceImp implements CodingChallengeService {
                     null
             );
         } catch (InvalidCodingChallengeEventException exception) {
-            return failAndLog(index, ref, "VALIDATION_ERROR", exception.getMessage());
+            return failAndLog(index, ref, "ERREUR_VALIDATION", exception.getMessage());
         } catch (ChallengeIngestConflictException exception) {
             return failAndLog(index, ref, exception.getErrorCode(), exception.getMessage());
         } catch (RuntimeException exception) {
-            return failAndLog(index, ref, "INGEST_ERROR", exception.getMessage());
+            return failAndLog(index, ref, "ERREUR_INGESTION", exception.getMessage());
         }
     }
 
@@ -163,7 +162,7 @@ public class CodingChallengeServiceImp implements CodingChallengeService {
         CodingChallenge challenge = codingChallengeRepository.findById(challengeId)
                 .orElseThrow(() ->
                         new EntityNotFoundException(
-                                "Coding challenge with id: " + challengeId + " was not found"
+                                "Coding challenge introuvable : id=" + challengeId
                         )
                 );
 
@@ -187,7 +186,7 @@ public class CodingChallengeServiceImp implements CodingChallengeService {
                     false,
                     challengeId,
                     0,
-                    "Coding challenge not found: id=" + challengeId
+                    "Coding challenge introuvable : id=" + challengeId
             );
         }
         CodingChallenge challenge = optional.get();
@@ -203,7 +202,7 @@ public class CodingChallengeServiceImp implements CodingChallengeService {
         integrationLogService.logEvent(
                 TypeLog.GESTION_CHALLENGE,
                 StatutLog.SUCCES,
-                "Coding challenge soft-deleted (feedbacks kept): id=" + challengeId
+                "Coding challenge archivé (feedbacks conservés) : id=" + challengeId
                         + " titre=" + challenge.getTitre(),
                 challengeId
         );
@@ -212,7 +211,7 @@ public class CodingChallengeServiceImp implements CodingChallengeService {
                 true,
                 challengeId,
                 notifications.size(),
-                "Challenge archived; " + notifications.size() + " linked notification(s) soft-deleted"
+                "Challenge archivé ; " + notifications.size() + " notification(s) liée(s) archivée(s)"
         );
     }
 
@@ -285,14 +284,14 @@ public class CodingChallengeServiceImp implements CodingChallengeService {
     public ChallengeSyncResponse synchroniserChallenges() {
         if (syncService == null) {
             return new ChallengeSyncResponse(
-                    "unavailable",
+                    "indisponible",
                     false,
                     false,
                     0,
                     0,
                     0,
                     0,
-                    "Sync service is not available in this profile",
+                    "Service de synchronisation indisponible dans ce profil",
                     List.of()
             );
         }
@@ -335,7 +334,7 @@ public class CodingChallengeServiceImp implements CodingChallengeService {
             String message
     ) {
         integrationLogService.logSyncEvent(null, StatutLog.ERREUR, message);
-        log.warn("Challenge ingest failed [{}]: {}", errorCode, message);
+        log.warn("Échec ingestion challenge [{}] : {}", errorCode, message);
         return ChallengeIngestItemResult.failed(index, ref, errorCode, message);
     }
 
@@ -370,32 +369,33 @@ public class CodingChallengeServiceImp implements CodingChallengeService {
             boolean userAlreadyExisted,
             boolean notificationCreated,
             boolean notificationAlreadyExisted,
-            List<String> userFieldsUpdated
+            List<String> userFieldsUpdated,
+            NotificationCreationResult notificationOutcome
     ) {
         List<String> messages = new ArrayList<>();
         messages.add(switch (entityCase) {
-            case BOTH_EXIST -> "Challenge and user already existed — linked and notification checked";
-            case CHALLENGE_EXISTS_USER_NEW -> "Challenge already existed — new user created and linked";
-            case USER_EXISTS_CHALLENGE_NEW -> "User already existed — new challenge created and linked";
-            case BOTH_NEW -> "New challenge and new user created";
+            case BOTH_EXIST -> "Challenge et utilisateur existaient déjà — liaison et notification vérifiées";
+            case CHALLENGE_EXISTS_USER_NEW -> "Challenge déjà existant — nouvel utilisateur créé et lié";
+            case USER_EXISTS_CHALLENGE_NEW -> "Utilisateur déjà existant — nouveau challenge créé et lié";
+            case BOTH_NEW -> "Nouveau challenge et nouvel utilisateur créés";
         });
         if (challengeAlreadyExisted) {
-            messages.add("Coding challenge matched by external test id (already in database)");
+            messages.add("Coding challenge trouvé par id externe du test (déjà en base)");
         } else {
-            messages.add("Coding challenge inserted from event.test payload");
+            messages.add("Coding challenge inséré depuis le payload event.test");
         }
         if (userAlreadyExisted) {
-            messages.add("User matched an existing account (external id, email, or username)");
+            messages.add("Utilisateur correspondant à un compte existant (id externe, e-mail ou nom d'utilisateur)");
         } else {
-            messages.add("User account created (setup token issued for account completion)");
+            messages.add("Compte utilisateur créé (jeton de finalisation émis pour compléter le compte)");
         }
         if (!userFieldsUpdated.isEmpty()) {
-            messages.add("User fields updated: " + String.join(", ", userFieldsUpdated));
+            messages.add("Champs utilisateur mis à jour : " + String.join(", ", userFieldsUpdated));
         }
         if (notificationAlreadyExisted) {
-            messages.add("Notification already existed for this user/challenge pair — not duplicated");
+            messages.add("Notification déjà existante pour cette paire utilisateur/challenge — pas de doublon");
         } else if (notificationCreated) {
-            messages.add("Notification created (email sent when notifications are enabled)");
+            messages.add(notificationOutcome.message());
         }
         return messages;
     }
@@ -423,7 +423,7 @@ public class CodingChallengeServiceImp implements CodingChallengeService {
         integrationLogService.logSyncEvent(
                 saved.getId(),
                 StatutLog.INFO,
-                "Coding challenge created from ingest: externalId=" + event.test().id()
+                "Coding challenge créé depuis l'ingestion : externalId=" + event.test().id()
                         + " titre=" + event.test().titre()
         );
 
@@ -518,11 +518,11 @@ public class CodingChallengeServiceImp implements CodingChallengeService {
             Utilisateur external = byExternalId.get();
             Utilisateur emailHolder = byEmail.get();
             throw new ChallengeIngestConflictException(
-                    "EMAIL_ALREADY_USED_BY_OTHER_USER",
-                    "Email '" + incoming.email() + "' is already used by user id="
+                    "EMAIL_DEJA_UTILISE_PAR_AUTRE_UTILISATEUR",
+                    "L'e-mail '" + incoming.email() + "' est déjà utilisé par l'utilisateur id="
                             + emailHolder.getId() + " (externalId=" + emailHolder.getExternalId()
-                            + ") but this event carries external user id=" + incoming.id()
-                            + ". One email per user — two accounts cannot share the same email.",
+                            + ") alors que cet événement porte l'id utilisateur externe=" + incoming.id()
+                            + ". Un e-mail par utilisateur — deux comptes ne peuvent pas partager le même e-mail.",
                     incoming.id(),
                     incoming.email(),
                     emailHolder.getId(),
@@ -535,11 +535,11 @@ public class CodingChallengeServiceImp implements CodingChallengeService {
             Utilisateur emailHolder = byEmail.get();
             if (emailHolder.getExternalId() != null && !emailHolder.getExternalId().equals(incoming.id())) {
                 throw new ChallengeIngestConflictException(
-                        "EMAIL_ALREADY_USED_BY_OTHER_USER",
-                        "Email '" + incoming.email() + "' belongs to external user id="
+                        "EMAIL_DEJA_UTILISE_PAR_AUTRE_UTILISATEUR",
+                        "L'e-mail '" + incoming.email() + "' appartient à l'utilisateur externe id="
                                 + emailHolder.getExternalId()
-                                + " but event user id=" + incoming.id()
-                                + ". Cannot attach this email to a different external id.",
+                                + " mais l'événement porte l'id utilisateur=" + incoming.id()
+                                + ". Impossible d'associer cet e-mail à un autre id externe.",
                         incoming.id(),
                         incoming.email(),
                         emailHolder.getId(),
@@ -554,10 +554,10 @@ public class CodingChallengeServiceImp implements CodingChallengeService {
             if (emailTaken.isPresent() && !emailTaken.get().getId().equals(byExternalId.get().getId())) {
                 Utilisateur holder = emailTaken.get();
                 throw new ChallengeIngestConflictException(
-                        "EMAIL_ALREADY_USED_BY_OTHER_USER",
-                        "Cannot update user externalId=" + incoming.id()
-                                + " to email '" + incoming.email()
-                                + "' — that email is already used by user id=" + holder.getId()
+                        "EMAIL_DEJA_UTILISE_PAR_AUTRE_UTILISATEUR",
+                        "Impossible de mettre à jour l'utilisateur externalId=" + incoming.id()
+                                + " avec l'e-mail '" + incoming.email()
+                                + "' — cet e-mail est déjà utilisé par l'utilisateur id=" + holder.getId()
                                 + " (externalId=" + holder.getExternalId() + ")",
                         incoming.id(),
                         incoming.email(),
@@ -574,8 +574,8 @@ public class CodingChallengeServiceImp implements CodingChallengeService {
                     && !byExternalId.get().getId().equals(byUserName.get().getId())) {
                 Utilisateur holder = byUserName.get();
                 throw new ChallengeIngestConflictException(
-                        "USERNAME_ALREADY_USED_BY_OTHER_USER",
-                        "Username '" + incoming.userName() + "' is already used by user id="
+                        "NOM_UTILISATEUR_DEJA_UTILISE",
+                        "Le nom d'utilisateur '" + incoming.userName() + "' est déjà utilisé par l'utilisateur id="
                                 + holder.getId() + " (externalId=" + holder.getExternalId() + ")",
                         incoming.id(),
                         incoming.email(),

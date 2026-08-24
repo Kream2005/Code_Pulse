@@ -33,7 +33,16 @@ public class CodingChallengeRestController {
     @PreAuthorize(SecurityRoles.ADMIN_CHALLENGE)
     public ResponseEntity<ChallengeSyncResponse> synchroniserChallenge() {
         ChallengeSyncResponse response = service.synchroniserChallenges();
-        HttpStatus status = response.failed() > 0 ? HttpStatus.MULTI_STATUS : HttpStatus.ACCEPTED;
+        HttpStatus status;
+        if ("erreur".equals(response.mode())) {
+            status = HttpStatus.BAD_GATEWAY;
+        } else if (response.failed() > 0) {
+            status = HttpStatus.MULTI_STATUS;
+        } else if ("desactive".equals(response.mode()) || "indisponible".equals(response.mode())) {
+            status = HttpStatus.OK;
+        } else {
+            status = HttpStatus.ACCEPTED;
+        }
         return ResponseEntity.status(status).body(response);
     }
 

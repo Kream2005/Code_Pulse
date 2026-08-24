@@ -1,8 +1,8 @@
 package com.stage.backend.kafka.sync;
 
 import com.stage.backend.dto.codingchallenge.ChallengeIngestItemResult;
-import com.stage.backend.enums.IngestItemStatus;
 import com.stage.backend.dto.codingchallenge.ChallengeSyncResponse;
+import com.stage.backend.enums.IngestItemStatus;
 import com.stage.backend.enums.StatutLog;
 import com.stage.backend.kafka.config.ExternalApiProperties;
 import com.stage.backend.kafka.event.CodingChallengeEvent;
@@ -53,12 +53,12 @@ public class CodingChallengeSyncService {
 
     public ChallengeSyncResponse synchroniserChallenges() {
         if (!externalApiProperties.enabled()) {
-            String message = "External coding challenges API is disabled. "
-                    + "Set codepulse.external-api.enabled=true to trigger synchronization.";
+            String message = "L'API externe des coding challenges est désactivée. "
+                    + "Définissez codepulse.external-api.enabled=true pour lancer une synchronisation.";
             log.warn(message);
             integrationLogService.logSyncEvent(null, StatutLog.WARNING, message);
             return new ChallengeSyncResponse(
-                    "disabled",
+                    "desactive",
                     false,
                     kafkaEnabled,
                     0,
@@ -70,7 +70,7 @@ public class CodingChallengeSyncService {
             );
         }
 
-        log.info("Fetching coding challenges from {}", externalApiProperties.codingChallengesUrl());
+        log.info("Récupération des coding challenges depuis {}", externalApiProperties.codingChallengesUrl());
 
         try {
             List<CodingChallengeEvent> challenges = fetchChallengesFromApi();
@@ -79,7 +79,7 @@ public class CodingChallengeSyncService {
                 integrationLogService.logSyncEvent(
                         null,
                         StatutLog.INFO,
-                        "External API returned no coding challenges"
+                        "L'API externe n'a retourné aucun coding challenge"
                 );
                 return new ChallengeSyncResponse(
                         kafkaEnabled ? "kafka" : "direct",
@@ -89,7 +89,7 @@ public class CodingChallengeSyncService {
                         0,
                         0,
                         0,
-                        "Publisher returned an empty batch — nothing to sync",
+                        "Le publisher a retourné un lot vide — rien à synchroniser",
                         List.of()
                 );
             }
@@ -99,7 +99,7 @@ public class CodingChallengeSyncService {
                 for (CodingChallengeEvent challenge : challenges) {
                     producer.publish(challenge);
                 }
-                log.info("Published '{}' coding challenges to Kafka for ingestion", challenges.size());
+                log.info("{} coding challenge(s) publié(s) sur Kafka pour ingestion", challenges.size());
                 return new ChallengeSyncResponse(
                         "kafka",
                         true,
@@ -108,7 +108,7 @@ public class CodingChallengeSyncService {
                         challenges.size(),
                         challenges.size(),
                         0,
-                        "Published " + challenges.size() + " event(s) to Kafka — consumer will process them",
+                        challenges.size() + " événement(s) publié(s) sur Kafka — le consommateur les traitera",
                         List.of()
                 );
             }
@@ -128,7 +128,7 @@ public class CodingChallengeSyncService {
                     failed++;
                 }
             }
-            log.info("Ingested '{}' coding challenges directly (Kafka disabled)", challenges.size());
+            log.info("{} coding challenge(s) ingéré(s) directement (Kafka désactivé)", challenges.size());
             return new ChallengeSyncResponse(
                     "direct",
                     true,
@@ -137,15 +137,26 @@ public class CodingChallengeSyncService {
                     succeeded,
                     succeeded,
                     failed,
-                    "Processed " + succeeded + "/" + challenges.size()
-                            + " event(s) directly (no Kafka producer)",
+                    succeeded + "/" + challenges.size()
+                            + " événement(s) traité(s) directement (sans producteur Kafka)",
                     results
             );
         } catch (RestClientException exception) {
-            String message = "Failed to fetch coding challenges from external API: " + exception.getMessage();
+            String message = "Échec de récupération des coding challenges depuis l'API externe : "
+                    + exception.getMessage();
             log.error(message, exception);
             integrationLogService.logSyncEvent(null, StatutLog.ERREUR, message);
-            throw exception;
+            return new ChallengeSyncResponse(
+                    "erreur",
+                    true,
+                    kafkaEnabled,
+                    0,
+                    0,
+                    0,
+                    0,
+                    message,
+                    List.of()
+            );
         }
     }
 

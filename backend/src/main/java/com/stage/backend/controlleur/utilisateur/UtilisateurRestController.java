@@ -1,7 +1,9 @@
 package com.stage.backend.controlleur.utilisateur;
 
+import com.stage.backend.dto.common.SuppressionResponse;
 import com.stage.backend.dto.utilisateur.CreateUtilisateurRequest;
 import com.stage.backend.dto.utilisateur.PromoteRoleRequest;
+import com.stage.backend.dto.utilisateur.PromoteRoleResponse;
 import com.stage.backend.dto.utilisateur.UpdateUtilisateurRequest;
 import com.stage.backend.dto.utilisateur.UtilisateurDto;
 import com.stage.backend.enums.Role;
@@ -41,7 +43,7 @@ public class UtilisateurRestController {
 
     @PatchMapping("/promote-role/{id}")
     @PreAuthorize(SecurityRoles.ADMIN_CODEPULSE)
-    public ResponseEntity<UtilisateurDto> promoteRole(
+    public ResponseEntity<PromoteRoleResponse> promoteRole(
             @PathVariable Long id,
             @Valid @RequestBody PromoteRoleRequest request
     ) {
@@ -50,11 +52,13 @@ public class UtilisateurRestController {
 
     @DeleteMapping("/delete-user/{id}")
     @PreAuthorize(SecurityRoles.ADMIN_CODEPULSE)
-    public ResponseEntity<Void> supprimerUtilisateur(
+    public ResponseEntity<SuppressionResponse> supprimerUtilisateur(
             @PathVariable Long id
     ) {
-        service.supprimerUtilisateur(id);
-        return ResponseEntity.noContent().build();
+        SuppressionResponse response = service.supprimerUtilisateur(id);
+        return response.supprime()
+                ? ResponseEntity.ok(response)
+                : ResponseEntity.status(404).body(response);
     }
 
     @GetMapping("/get-user/{id}")

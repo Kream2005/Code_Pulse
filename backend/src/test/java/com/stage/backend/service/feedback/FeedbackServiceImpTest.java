@@ -27,8 +27,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
+import com.stage.backend.exception.FeedbackValidationException;
 
 import java.util.List;
 import java.util.Optional;
@@ -83,22 +82,20 @@ class FeedbackServiceImpTest {
     @Test
     void submitFeedback_duplicate_returns409() {
         when(repository.existsByUtilisateurIdAndCodingChallengeId(1L, 10L)).thenReturn(true);
+        when(codingChallengeRepository.findById(10L)).thenReturn(Optional.of(challenge));
 
         SubmitFeedbackRequest request = new SubmitFeedbackRequest(
                 10L, 4f, "ok", StatutFeedback.SOUMIS, List.of()
         );
 
         assertThatThrownBy(() -> service.submitFeedback(request, 1L))
-                .isInstanceOf(ResponseStatusException.class)
-                .extracting(ex -> ((ResponseStatusException) ex).getStatusCode().value())
-                .isEqualTo(HttpStatus.CONFLICT.value());
+                .isInstanceOf(FeedbackValidationException.class);
     }
 
     @Test
     void submitFeedback_missingMandatoryAnswer_returns400() {
         when(repository.existsByUtilisateurIdAndCodingChallengeId(1L, 10L)).thenReturn(false);
         when(codingChallengeRepository.findById(10L)).thenReturn(Optional.of(challenge));
-        when(utilisateurRepository.findById(1L)).thenReturn(Optional.of(user));
         when(questionFeedbackRepository.findByObligatoire(true)).thenReturn(List.of(mandatoryQuestion));
 
         SubmitFeedbackRequest request = new SubmitFeedbackRequest(
@@ -106,9 +103,7 @@ class FeedbackServiceImpTest {
         );
 
         assertThatThrownBy(() -> service.submitFeedback(request, 1L))
-                .isInstanceOf(ResponseStatusException.class)
-                .extracting(ex -> ((ResponseStatusException) ex).getStatusCode().value())
-                .isEqualTo(HttpStatus.BAD_REQUEST.value());
+                .isInstanceOf(FeedbackValidationException.class);
     }
 
     @Test

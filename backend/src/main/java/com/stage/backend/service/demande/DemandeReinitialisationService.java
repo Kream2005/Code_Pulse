@@ -1,6 +1,9 @@
 package com.stage.backend.service.demande;
 
+import com.stage.backend.dto.demande.DemandeMotDePasseResponse;
 import com.stage.backend.dto.demande.DemandeReinitialisationDto;
+import com.stage.backend.dto.demande.DemandeTraitementResponse;
+import com.stage.backend.dto.demande.ResetInfoResponse;
 import com.stage.backend.dto.login.LoginResponse;
 import com.stage.backend.enums.StatutDemandeReinit;
 import org.springframework.data.domain.Page;
@@ -9,7 +12,7 @@ import java.util.List;
 
 public interface DemandeReinitialisationService {
 
-    void soumettreDemande(String email);
+    DemandeMotDePasseResponse soumettreDemande(String email);
 
     List<DemandeReinitialisationDto> lister(StatutDemandeReinit statut);
 
@@ -17,13 +20,13 @@ public interface DemandeReinitialisationService {
 
     Page<DemandeReinitialisationDto> rechercherPage(String keyword, StatutDemandeReinit statut, int page, int size);
 
-    DemandeReinitialisationDto envoyerLien(Long demandeId);
+    DemandeTraitementResponse envoyerLien(Long demandeId);
 
-    DemandeReinitialisationDto definirMotDePasseTemporaire(Long demandeId, String temporaryPassword);
+    DemandeTraitementResponse definirMotDePasseTemporaire(Long demandeId, String temporaryPassword);
 
-    DemandeReinitialisationDto rejeter(Long demandeId);
+    DemandeTraitementResponse rejeter(Long demandeId);
 
     LoginResponse reinitialiserMotDePasse(String token, String password);
 
-    String getEmailByResetToken(String token);
+    ResetInfoResponse getResetInfo(String token);
 }

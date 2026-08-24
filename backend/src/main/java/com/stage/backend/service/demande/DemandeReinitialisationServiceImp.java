@@ -1,14 +1,20 @@
 package com.stage.backend.service.demande;
 
 import com.stage.backend.config.notification.NotificationProperties;
+import com.stage.backend.dto.demande.DemandeMotDePasseResponse;
 import com.stage.backend.dto.demande.DemandeReinitialisationDto;
+import com.stage.backend.dto.demande.DemandeTraitementResponse;
+import com.stage.backend.dto.demande.ResetInfoResponse;
 import com.stage.backend.dto.login.LoginResponse;
 import com.stage.backend.email.NotificationEmailSender;
 import com.stage.backend.entity.DemandeReinitialisation;
 import com.stage.backend.entity.Utilisateur;
+import com.stage.backend.enums.ResultatDemandeMotDePasse;
 import com.stage.backend.enums.StatutDemandeReinit;
 import com.stage.backend.enums.StatutLog;
 import com.stage.backend.enums.TypeLog;
+import com.stage.backend.exception.ErreurAuthentificationException;
+import com.stage.backend.exception.ErreurMetierException;
 import com.stage.backend.repository.DemandeReinitialisationRepository;
 import com.stage.backend.repository.UtilisateurRepository;
 import com.stage.backend.security.JwtProperties;
@@ -20,7 +26,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
@@ -29,7 +34,6 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -54,28 +58,54 @@ public class DemandeReinitialisationServiceImp implements DemandeReinitialisatio
     private final JwtProperties jwtProperties;
 
     @Override
-    public void soumettreDemande(String email) {
+    public DemandeMotDePasseResponse soumettreDemande(String email) {
         String normalized = email.trim();
+        String emailMasque = masquerEmail(normalized);
         Utilisateur user = utilisateurRepository.findByEmail(normalized).orElse(null);
 
-        if (user == null || !user.isCompteComplet() || user.getPassword() == null) {
+        if (user == null) {
             integrationLogService.logEvent(
                     TypeLog.AUTH,
                     StatutLog.INFO,
-                    "Password reset request ignored (unknown or incomplete account): " + normalized,
+                    "Demande mot de passe ignorée (compte inconnu) : " + normalized,
                     null
             );
-            return;
+            return new DemandeMotDePasseResponse(
+                    true,
+                    ResultatDemandeMotDePasse.IGNORE_COMPTE_INCONNU,
+                    emailMasque,
+                    "Aucun compte complet trouvé pour cet e-mail — demande ignorée"
+            );
+        }
+
+        if (!user.isCompteComplet() || user.getPassword() == null) {
+            integrationLogService.logEvent(
+                    TypeLog.AUTH,
+                    StatutLog.INFO,
+                    "Demande mot de passe ignorée (compte incomplet) : " + normalized,
+                    null
+            );
+            return new DemandeMotDePasseResponse(
+                    true,
+                    ResultatDemandeMotDePasse.IGNORE_COMPTE_INCOMPLET,
+                    emailMasque,
+                    "Compte incomplet — l'utilisateur doit d'abord finaliser son inscription"
+            );
         }
 
         if (demandeRepository.existsByEmailIgnoreCaseAndStatut(user.getEmail(), StatutDemandeReinit.EN_ATTENTE)) {
             integrationLogService.logEvent(
                     TypeLog.AUTH,
                     StatutLog.INFO,
-                    "Password reset request already pending: " + user.getEmail(),
+                    "Demande mot de passe déjà en attente : " + user.getEmail(),
                     null
             );
-            return;
+            return new DemandeMotDePasseResponse(
+                    true,
+                    ResultatDemandeMotDePasse.DEJA_EN_ATTENTE,
+                    emailMasque,
+                    "Une demande est déjà en attente pour cet e-mail"
+            );
         }
 
         DemandeReinitialisation demande = new DemandeReinitialisation();
@@ -88,8 +118,14 @@ public class DemandeReinitialisationServiceImp implements DemandeReinitialisatio
         integrationLogService.logEvent(
                 TypeLog.AUTH,
                 StatutLog.SUCCES,
-                "Password reset request submitted: " + user.getEmail(),
+                "Demande de réinitialisation créée : " + user.getEmail(),
                 null
+        );
+        return new DemandeMotDePasseResponse(
+                true,
+                ResultatDemandeMotDePasse.CREE,
+                emailMasque,
+                "Demande enregistrée — un administrateur la traitera prochainement"
         );
     }
 
@@ -120,9 +156,10 @@ public class DemandeReinitialisationServiceImp implements DemandeReinitialisatio
     }
 
     @Override
-    public DemandeReinitialisationDto envoyerLien(Long demandeId) {
+    public DemandeTraitementResponse envoyerLien(Long demandeId) {
         DemandeReinitialisation demande = getPending(demandeId);
         Utilisateur user = requireUser(demande);
+        StatutDemandeReinit statutPrecedent = demande.getStatut();
 
         String token = UUID.randomUUID().toString();
         demande.setResetToken(token);
@@ -133,21 +170,36 @@ public class DemandeReinitialisationServiceImp implements DemandeReinitialisatio
         demandeRepository.save(demande);
 
         String actionUrl = notificationProperties.frontendBaseUrl() + "/reset-password?token=" + token;
-        emailSender.sendPasswordResetLink(user, actionUrl);
-
-        integrationLogService.logEvent(
-                TypeLog.AUTH,
-                StatutLog.SUCCES,
-                "Password reset link sent for: " + user.getEmail(),
-                null
-        );
-        return toDto(demande);
+        boolean emailEnvoye;
+        String message;
+        try {
+            emailSender.sendPasswordResetLink(user, actionUrl);
+            emailEnvoye = true;
+            message = "Lien de réinitialisation envoyé à " + user.getEmail();
+            integrationLogService.logEvent(
+                    TypeLog.AUTH,
+                    StatutLog.SUCCES,
+                    "Lien de réinitialisation envoyé : " + user.getEmail(),
+                    null
+            );
+        } catch (RuntimeException exception) {
+            emailEnvoye = false;
+            message = "Demande traitée mais échec d'envoi e-mail : " + exception.getMessage();
+            integrationLogService.logEvent(
+                    TypeLog.AUTH,
+                    StatutLog.ERREUR,
+                    "Échec envoi lien réinitialisation : " + exception.getMessage(),
+                    null
+            );
+        }
+        return new DemandeTraitementResponse(toDto(demande), emailEnvoye, actionUrl, statutPrecedent, message);
     }
 
     @Override
-    public DemandeReinitialisationDto definirMotDePasseTemporaire(Long demandeId, String temporaryPassword) {
+    public DemandeTraitementResponse definirMotDePasseTemporaire(Long demandeId, String temporaryPassword) {
         DemandeReinitialisation demande = getPending(demandeId);
         Utilisateur user = requireUser(demande);
+        StatutDemandeReinit statutPrecedent = demande.getStatut();
 
         user.setPassword(passwordEncoder.encode(temporaryPassword));
         utilisateurRepository.save(user);
@@ -159,20 +211,35 @@ public class DemandeReinitialisationServiceImp implements DemandeReinitialisatio
         demande.setResetTokenExpiresAt(null);
         demandeRepository.save(demande);
 
-        emailSender.sendTemporaryPasswordEmail(user, temporaryPassword);
-
-        integrationLogService.logEvent(
-                TypeLog.AUTH,
-                StatutLog.SUCCES,
-                "Temporary password set for: " + user.getEmail(),
-                null
-        );
-        return toDto(demande);
+        boolean emailEnvoye;
+        String message;
+        try {
+            emailSender.sendTemporaryPasswordEmail(user, temporaryPassword);
+            emailEnvoye = true;
+            message = "Mot de passe temporaire défini et envoyé à " + user.getEmail();
+            integrationLogService.logEvent(
+                    TypeLog.AUTH,
+                    StatutLog.SUCCES,
+                    "Mot de passe temporaire défini : " + user.getEmail(),
+                    null
+            );
+        } catch (RuntimeException exception) {
+            emailEnvoye = false;
+            message = "Mot de passe temporaire défini mais échec d'envoi e-mail : " + exception.getMessage();
+            integrationLogService.logEvent(
+                    TypeLog.AUTH,
+                    StatutLog.ERREUR,
+                    "Échec envoi mot de passe temporaire : " + exception.getMessage(),
+                    null
+            );
+        }
+        return new DemandeTraitementResponse(toDto(demande), emailEnvoye, null, statutPrecedent, message);
     }
 
     @Override
-    public DemandeReinitialisationDto rejeter(Long demandeId) {
+    public DemandeTraitementResponse rejeter(Long demandeId) {
         DemandeReinitialisation demande = getPending(demandeId);
+        StatutDemandeReinit statutPrecedent = demande.getStatut();
         demande.setStatut(StatutDemandeReinit.REJETEE);
         demande.setDateTraitement(ZonedDateTime.now());
         demande.setTraitePar(currentAdmin());
@@ -181,23 +248,40 @@ public class DemandeReinitialisationServiceImp implements DemandeReinitialisatio
         integrationLogService.logEvent(
                 TypeLog.AUTH,
                 StatutLog.WARNING,
-                "Password reset request rejected: " + demande.getEmail(),
+                "Demande de réinitialisation rejetée : " + demande.getEmail(),
                 null
         );
-        return toDto(demande);
+        return new DemandeTraitementResponse(
+                toDto(demande),
+                false,
+                null,
+                statutPrecedent,
+                "Demande rejetée pour " + demande.getEmail()
+        );
     }
 
     @Override
     public LoginResponse reinitialiserMotDePasse(String token, String password) {
         DemandeReinitialisation demande = demandeRepository.findByResetToken(token)
-                .orElseThrow(() -> new BadCredentialsException("Invalid reset token"));
+                .orElseThrow(() -> new ErreurAuthentificationException(
+                        "JETON_INVALIDE",
+                        "Jeton de réinitialisation invalide"
+                ));
 
         if (demande.getStatut() != StatutDemandeReinit.LIEN_ENVOYE) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Reset link is no longer valid");
+            throw new ErreurMetierException(
+                    HttpStatus.BAD_REQUEST,
+                    "LIEN_INVALIDE",
+                    "Ce lien de réinitialisation n'est plus valide"
+            );
         }
         if (demande.getResetTokenExpiresAt() == null
                 || demande.getResetTokenExpiresAt().isBefore(ZonedDateTime.now())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Reset token expired");
+            throw new ErreurMetierException(
+                    HttpStatus.BAD_REQUEST,
+                    "JETON_EXPIRE",
+                    "Le jeton de réinitialisation a expiré"
+            );
         }
 
         Utilisateur user = requireUser(demande);
@@ -220,24 +304,52 @@ public class DemandeReinitialisationServiceImp implements DemandeReinitialisatio
 
     @Override
     @Transactional(readOnly = true)
-    public String getEmailByResetToken(String token) {
-        DemandeReinitialisation demande = demandeRepository.findByResetToken(token)
-                .orElseThrow(() -> new BadCredentialsException("Invalid reset token"));
+    public ResetInfoResponse getResetInfo(String token) {
+        DemandeReinitialisation demande = demandeRepository.findByResetToken(token).orElse(null);
+        if (demande == null) {
+            return new ResetInfoResponse(
+                    false,
+                    null,
+                    null,
+                    "Jeton de réinitialisation invalide"
+            );
+        }
         if (demande.getStatut() != StatutDemandeReinit.LIEN_ENVOYE) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Reset link is no longer valid");
+            return new ResetInfoResponse(
+                    false,
+                    demande.getEmail(),
+                    demande.getResetTokenExpiresAt(),
+                    "Ce lien de réinitialisation n'est plus valide (statut : " + demande.getStatut() + ")"
+            );
         }
         if (demande.getResetTokenExpiresAt() == null
                 || demande.getResetTokenExpiresAt().isBefore(ZonedDateTime.now())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Reset token expired");
+            return new ResetInfoResponse(
+                    false,
+                    demande.getEmail(),
+                    demande.getResetTokenExpiresAt(),
+                    "Le jeton de réinitialisation a expiré"
+            );
         }
-        return demande.getEmail();
+        return new ResetInfoResponse(
+                true,
+                demande.getEmail(),
+                demande.getResetTokenExpiresAt(),
+                "Jeton valide — vous pouvez définir un nouveau mot de passe"
+        );
     }
 
     private DemandeReinitialisation getPending(Long demandeId) {
         DemandeReinitialisation demande = demandeRepository.findById(demandeId)
-                .orElseThrow(() -> new EntityNotFoundException("Reset request not found: " + demandeId));
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Demande de réinitialisation introuvable : id=" + demandeId
+                ));
         if (demande.getStatut() != StatutDemandeReinit.EN_ATTENTE) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request already processed");
+            throw new ErreurMetierException(
+                    HttpStatus.BAD_REQUEST,
+                    "DEMANDE_DEJA_TRAITEE",
+                    "Cette demande a déjà été traitée (statut : " + demande.getStatut() + ")"
+            );
         }
         return demande;
     }
@@ -245,9 +357,24 @@ public class DemandeReinitialisationServiceImp implements DemandeReinitialisatio
     private Utilisateur requireUser(DemandeReinitialisation demande) {
         Utilisateur user = demande.getUtilisateur();
         if (user == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No user linked to this request");
+            throw new ErreurMetierException(
+                    HttpStatus.BAD_REQUEST,
+                    "UTILISATEUR_LIE_MANQUANT",
+                    "Aucun utilisateur lié à cette demande"
+            );
         }
         return user;
+    }
+
+    private static String masquerEmail(String email) {
+        if (email == null || !email.contains("@")) {
+            return "***";
+        }
+        int at = email.indexOf('@');
+        if (at <= 1) {
+            return "*" + email.substring(at);
+        }
+        return email.charAt(0) + "***" + email.substring(at);
     }
 
     private Utilisateur currentAdmin() {
