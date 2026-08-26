@@ -29,6 +29,7 @@ import AdminFeedbacks from './pages/admin/AdminFeedbacks';
 import AdminLogs from './pages/admin/AdminLogs';
 import AdminQuestions from './pages/admin/AdminQuestions';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
+import AdminSmartSearch from './pages/admin/AdminSmartSearch';
 import { isAdmin, isUser } from './auth';
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -200,6 +201,16 @@ export default function App() {
             <AnalyticsRoute>
               <AdminAnalytics />
             </AnalyticsRoute>
+          </Shell>
+        }
+      />
+      <Route
+        path="/admin/smart-search"
+        element={
+          <Shell>
+            <AdminRoute>
+              <AdminSmartSearch />
+            </AdminRoute>
           </Shell>
         }
       />

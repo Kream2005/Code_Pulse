@@ -4,9 +4,11 @@ import com.icegreen.greenmail.util.GreenMail;
 import com.stage.backend.dto.notification.CapturedMailDto;
 import com.stage.backend.email.NotificationEmailSender;
 import jakarta.mail.Address;
+import jakarta.mail.BodyPart;
 import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeMultipart;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Profile;
@@ -39,31 +41,32 @@ public class MailboxRestController {
         StringBuilder html = new StringBuilder();
         html.append("""
                 <!DOCTYPE html>
-                <html><head><meta charset="utf-8"><title>CodePulse mailbox</title>
+                <html lang="fr"><head><meta charset="utf-8"><title>Boîte mail CodePulse</title>
                 <style>
-                  body { font-family: sans-serif; max-width: 880px; margin: 2rem auto; color: #1e293b; }
-                  a { color: #2563eb; }
-                  article { border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem 1.2rem; margin: 1rem 0; }
-                  pre { white-space: pre-wrap; background: #f8fafc; padding: 0.8rem; }
+                  body { font-family: Arial, Helvetica, sans-serif; max-width: 920px; margin: 2rem auto; color: #1e293b; }
+                  a { color: #0070ad; }
+                  article { border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem 1.2rem; margin: 1rem 0; background: #fff; }
+                  .meta { font-size: 13px; color: #64748b; margin-bottom: 0.8rem; }
+                  .preview { border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; background: #f8fafc; }
                 </style></head><body>
-                <h1>Demo mailbox</h1>
-                <p>Local GreenMail (not real internet mail).
-                <a href="/dev/mailbox/send-test">Send a test email</a> ·
-                <a href="/dev/mailbox">Refresh</a></p>
+                <h1>Boîte mail de démo</h1>
+                <p>SMTP local GreenMail (pas d’envoi Internet).
+                <a href="/dev/mailbox/send-test">Envoyer un e-mail de test</a> ·
+                <a href="/dev/mailbox">Actualiser</a></p>
                 """);
         if (mails.isEmpty()) {
-            html.append("<p>No messages yet. Use “Send a test email”, or wait for a notification/relance.</p>");
+            html.append("<p>Aucun message pour l’instant. Envoyez un test, ou déclenchez une notification / relance.</p>");
         }
         for (CapturedMailDto mail : mails) {
-            html.append("<article><p><b>")
+            html.append("<article><div class=\"meta\"><b>")
                     .append(esc(mail.subject()))
-                    .append("</b><br>To: ")
+                    .append("</b><br>À : ")
                     .append(esc(mail.to()))
                     .append("<br>")
                     .append(esc(String.valueOf(mail.sentAt())))
-                    .append("</p><pre>")
-                    .append(esc(mail.body()))
-                    .append("</pre></article>");
+                    .append("</div><div class=\"preview\">")
+                    .append(mail.body())
+                    .append("</div></article>");
         }
         html.append("</body></html>");
         return html.toString();
@@ -104,7 +107,7 @@ public class MailboxRestController {
                     message.getSentDate() != null ? message.getSentDate().toInstant() : Instant.now()
             );
         } catch (MessagingException | IOException exception) {
-            return new CapturedMailDto("", "", "(unreadable)", exception.getMessage(), Instant.now());
+            return new CapturedMailDto("", "", "(illisible)", exception.getMessage(), Instant.now());
         }
     }
 
@@ -117,7 +120,40 @@ public class MailboxRestController {
 
     private static String extractBody(MimeMessage message) throws MessagingException, IOException {
         Object content = message.getContent();
+        if (content instanceof String text) {
+            return text;
+        }
+        if (content instanceof MimeMultipart multipart) {
+            String html = findPart(multipart, "text/html");
+            if (html != null) {
+                return html;
+            }
+            String plain = findPart(multipart, "text/plain");
+            if (plain != null) {
+                return "<pre style=\"white-space:pre-wrap;padding:1rem;\">" + esc(plain) + "</pre>";
+            }
+        }
         return content != null ? content.toString() : "";
+    }
+
+    private static String findPart(MimeMultipart multipart, String mimeType)
+            throws MessagingException, IOException {
+        for (int i = 0; i < multipart.getCount(); i++) {
+            BodyPart part = multipart.getBodyPart(i);
+            Object nested = part.getContent();
+            if (nested instanceof MimeMultipart nestedMultipart) {
+                String found = findPart(nestedMultipart, mimeType);
+                if (found != null) {
+                    return found;
+                }
+            }
+            String partType = part.getContentType();
+            if (partType != null && partType.toLowerCase().startsWith(mimeType)) {
+                Object value = part.getContent();
+                return value != null ? value.toString() : null;
+            }
+        }
+        return null;
     }
 
     private static String esc(String value) {

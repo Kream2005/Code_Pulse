@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db_session, require_role
 from app.core.constants import ADMIN_ROLES
 from app.core.security import CurrentUser
+from app.kpi_tools.router import answer_kpi
 from app.schemas.kpi import KpiRequest, KpiResponse
 
 router = APIRouter(prefix="/kpi", tags=["kpi"])
@@ -13,8 +14,13 @@ router = APIRouter(prefix="/kpi", tags=["kpi"])
 def ask_kpi(
     body: KpiRequest,
     _user: CurrentUser = Depends(require_role(*ADMIN_ROLES)),
-    _db: Session = Depends(get_db_session),
+    db: Session = Depends(get_db_session),
 ) -> KpiResponse:
-    """Natural-language KPI question. Will later use LLM function calling + SQL resolvers."""
-    # TODO: route to kpi_tools.resolvers via function calling — never invent numbers
-    return KpiResponse(question=body.question, tool=None, value=None, explanation=None)
+    """Natural-language KPI question. Values always come from SQL resolvers."""
+    result = answer_kpi(db, body.question)
+    return KpiResponse(
+        question=result["question"],
+        tool=result.get("tool"),
+        value=result.get("value"),
+        explanation=result.get("explanation"),
+    )

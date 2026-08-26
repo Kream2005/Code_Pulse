@@ -1,0 +1,27 @@
+-- Run once as a PostgreSQL superuser (postgres), then re-run scripts/init_db.py
+-- as the normal codepulse user.
+--
+-- Prerequisites (Linux, Postgres 17):
+--   sudo apt install postgresql-17-pgvector
+--
+-- Connect as superuser — use ONE of these (from the codepulse-search folder):
+--
+--   A) Recommended — switch to postgres OS user (no DB password on most Linux installs):
+--      sudo su - postgres
+--      psql -d codepulse -f /full/path/to/codepulse-search/scripts/enable_pgvector.sql
+--      exit
+--
+--   B) If A still asks for a password, set one while logged in as postgres:
+--      sudo su - postgres
+--      psql -c "ALTER USER postgres WITH PASSWORD 'pick_a_password';"
+--      psql -U postgres -h localhost -d codepulse -f /full/path/to/.../enable_pgvector.sql
+--
+--   C) Windows (PowerShell):
+--      & "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -d codepulse -f scripts\enable_pgvector.sql
+--
+-- Then (any OS, as your normal user):
+--   python scripts/init_db.py
+--   pip install -r requirements-ml.txt
+--   python scripts/reindex.py
+
+CREATE EXTENSION IF NOT EXISTS vector;

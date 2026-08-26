@@ -1,15 +1,14 @@
 """Periodic ingestion trigger.
 
-No container/orchestrator: wire this with a crontab, e.g.
+No container orchestrator required. Prefer OS cron/Task Scheduler, e.g.
 
-    */15 * * * *  /opt/codepulse/codepulse-search/.venv/bin/python /opt/codepulse/codepulse-search/scripts/reindex.py
+    */15 * * * *  /path/to/codepulse-search/.venv/bin/python \\
+                  /path/to/codepulse-search/scripts/reindex.py
 
-or a simple loop:
-
-    while True:
-        run_ingestion()
-        time.sleep(interval_seconds)
+Or run this module as a long-lived process on a dedicated host.
 """
+
+from __future__ import annotations
 
 import time
 
@@ -17,7 +16,11 @@ from app.ingestion.pipeline import run_ingestion
 
 
 def run_forever(interval_seconds: int = 900) -> None:
-    # TODO: choose cron vs in-process loop for the target host
     while True:
-        run_ingestion()
+        result = run_ingestion()
+        print(result.as_dict())
         time.sleep(interval_seconds)
+
+
+if __name__ == "__main__":
+    run_forever()

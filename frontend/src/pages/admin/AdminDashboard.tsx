@@ -166,6 +166,11 @@ export default function AdminDashboard() {
             subtitle={t('admin.analyticsCardSub')}
           />
         )}
+        <NavCard
+          to="/admin/smart-search"
+          title={t('admin.smartCard')}
+          subtitle={t('admin.smartCardSub')}
+        />
         {canManageQuestions() && (
           <NavCard
             to="/admin/questions"

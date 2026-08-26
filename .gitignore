@@ -5,6 +5,9 @@ backend/src/main/resources/public.key
 **/private.key
 **/public.key
 
+# Private checklist for the other PC (contains personal paths / secrets placeholders)
+LOCAL_SETUP_OTHER_PC.md
+
 backend/data/
 
 node_modules/
@@ -17,6 +20,10 @@ challenge-publisher/.venv/
 
 # frontend build
 frontend/dist/
+
+# codepulse-search local
+codepulse-search/.venv/
+codepulse-search/.env
 
 # IDE / OS
 .idea/

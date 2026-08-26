@@ -1,0 +1,3 @@
+# Phase 1+ — embeddings on CPU (first install downloads PyTorch + MiniLM).
+# On Windows i5 this can take several minutes and ~1–2 GB disk.
+sentence-transformers==4.1.0
