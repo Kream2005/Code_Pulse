@@ -13,7 +13,7 @@ from app.retrieval.fusion import (
 from app.retrieval.keyword_search import keyword_search
 from app.retrieval.query_analysis import analyze_query
 from app.retrieval.titles import load_titles
-from app.retrieval.vector_search import vector_search
+from app.retrieval.vector_search import MIN_VECTOR_SCORE, vector_search
 from app.schemas.search import SearchHit
 
 
@@ -66,12 +66,16 @@ def hybrid_search(
     query_embedding = get_embedding_provider().embed([embed_text])[0]
 
     fetch_k = max(top_k * 2, 12)
+    # Explicit tag filter already narrows the pool — keep weak neighbours so
+    # browsing by tag still returns challenges even if the free-text query
+    # does not appear in challenge wording (e.g. French “difficiles”).
     vector_hits = vector_search(
         query_embedding=query_embedding,
         top_k=fetch_k,
         source_types=source_types,
         db=db,
         tag=effective_tag,
+        min_score=0.0 if effective_tag else MIN_VECTOR_SCORE,
     )
     keyword_hits = keyword_search(
         query=analysis.cleaned,

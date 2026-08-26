@@ -45,6 +45,7 @@ export default function AdminSmartSearch() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hits, setHits] = useState<SearchHit[]>([]);
+  const [searched, setSearched] = useState(false);
   const [kpi, setKpi] = useState<KpiResponse | null>(null);
   const [assistant, setAssistant] = useState<AssistantResponse | null>(null);
   const [docs, setDocs] = useState<KnowledgeDocument[]>([]);
@@ -102,17 +103,20 @@ export default function AdminSmartSearch() {
           tag: tag || null,
         });
         setHits(res.results);
+        setSearched(true);
         setKpi(null);
         setAssistant(null);
       } else if (tab === 'kpi') {
         const res = await askKpi(q);
         setKpi(res);
         setHits([]);
+        setSearched(false);
         setAssistant(null);
       } else {
         const res = await askAssistant(q);
         setAssistant(res);
         setHits([]);
+        setSearched(false);
         setKpi(null);
       }
     } catch (err: unknown) {
@@ -257,16 +261,13 @@ export default function AdminSmartSearch() {
               </div>
             )}
 
-            <div className="flex items-center gap-3">
-              <button
-                type="submit"
-                disabled={loading || !query.trim()}
-                className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
-              >
-                {loading ? t('common.loading') : t('smart.submit')}
-              </button>
-              <p className="text-xs text-slate-500 dark:text-slate-400">{t('smart.hint')}</p>
-            </div>
+            <button
+              type="submit"
+              disabled={loading || !query.trim()}
+              className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+            >
+              {loading ? t('common.loading') : t('smart.submit')}
+            </button>
           </form>
         </Card>
       )}
@@ -370,7 +371,7 @@ export default function AdminSmartSearch() {
 
       {tab === 'search' && (
         <div className="space-y-3">
-          {hits.length === 0 && !loading && (
+          {searched && hits.length === 0 && !loading && (
             <p className="text-sm text-slate-500">{t('common.noResults')}</p>
           )}
           {hits.map((hit) => {
