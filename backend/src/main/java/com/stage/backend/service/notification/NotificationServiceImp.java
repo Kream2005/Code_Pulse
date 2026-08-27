@@ -282,15 +282,21 @@ public class NotificationServiceImp implements NotificationService {
                 seuil,
                 StatutFeedback.SOUMIS
         );
+        if (due.isEmpty()) {
+            log.debug(
+                    "Relance cycle: none due (wait {} after send, max {} relances, no submitted feedback)",
+                    relance.delay(),
+                    relance.max()
+            );
+            return 0;
+        }
         int sent = 0;
         for (Notification notification : due) {
             if (relancerUne(notification)) {
                 sent++;
             }
         }
-        if (sent > 0) {
-            log.info("Relance sent for {} unread notification(s)", sent);
-        }
+        log.info("Relance cycle: {} due, {} e-mail(s) sent", due.size(), sent);
         return sent;
     }
 

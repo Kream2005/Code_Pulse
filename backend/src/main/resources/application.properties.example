@@ -37,12 +37,15 @@ codepulse.external-api.read-timeout=5s
 codepulse.notification.from=dev@codepulse.local
 codepulse.notification.to=
 codepulse.notification.frontend-base-url=http://localhost:4200
-# Relances ON but throttled.
+# Relances: wait `delay` after the initial mail (or last relance), then resend if no feedback SOUMIS.
+# Demo laptop (test quickly): delay=2m, check-interval=1m, initial-delay=30s
+# Production-like: delay=48h, check-interval=6h, initial-delay=30m
 codepulse.notification.relance.enabled=true
 codepulse.notification.relance.delay=48h
 codepulse.notification.relance.check-interval=6h
 codepulse.notification.relance.initial-delay=30m
 codepulse.notification.relance.max=2
+# Manual test (standalone): GET http://localhost:8080/dev/relance/run
 
 # --- Mail (demo default = GreenMail on :1025 → http://localhost:8080/dev/mailbox) ---
 codepulse.notification.enabled=true
