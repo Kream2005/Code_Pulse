@@ -2,11 +2,15 @@ package com.stage.backend.service.notification;
 
 import com.stage.backend.config.notification.NotificationProperties;
 import com.stage.backend.dto.notification.CreateNotificationRequest;
+import com.stage.backend.dto.notification.NotificationCreationResult;
 import com.stage.backend.dto.notification.NotificationDto;
+import com.stage.backend.dto.notification.NotificationEnvoiResponse;
+import com.stage.backend.dto.notification.NotificationStatutUpdateResponse;
 import com.stage.backend.email.NotificationEmailSender;
 import com.stage.backend.entity.CodingChallenge;
 import com.stage.backend.entity.Notification;
 import com.stage.backend.entity.Utilisateur;
+import com.stage.backend.enums.ResultatLivraisonEmail;
 import com.stage.backend.enums.StatutFeedback;
 import com.stage.backend.enums.StatutLog;
 import com.stage.backend.enums.StatutNotification;
@@ -45,18 +49,18 @@ public class NotificationServiceImp implements NotificationService {
     private final IntegrationLogService integrationLogService;
 
     @Override
-    public NotificationDto envoyerNotification(CreateNotificationRequest request) {
+    public NotificationEnvoiResponse envoyerNotification(CreateNotificationRequest request) {
         Utilisateur utilisateur = utilisateurRepository.findById(request.utilisateurId())
                 .orElseThrow(() -> new EntityNotFoundException(
-                        "User with id: " + request.utilisateurId() + " was not found"
+                        "Utilisateur introuvable : id=" + request.utilisateurId()
                 ));
 
         CodingChallenge codingChallenge = codingChallengeRepository.findById(request.codingChallengeId())
                 .orElseThrow(() -> new EntityNotFoundException(
-                        "Coding challenge with id: " + request.codingChallengeId() + " was not found"
+                        "Coding challenge introuvable : id=" + request.codingChallengeId()
                 ));
 
-        return notifyChallengeCompletion(utilisateur, codingChallenge);
+        return notifyChallengeCompletion(utilisateur, codingChallenge).toEnvoiResponse();
     }
 
     @Override
@@ -147,28 +151,32 @@ public class NotificationServiceImp implements NotificationService {
     }
 
     @Override
-    public boolean changerStatut(Long notificationId, StatutNotification statut) {
+    public NotificationStatutUpdateResponse changerStatut(Long notificationId, StatutNotification statut) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() ->
                         new EntityNotFoundException(
-                                "Notification with id: "
-                                        + notificationId
-                                        + " was not found"
+                                "Notification introuvable : id=" + notificationId
                         )
                 );
 
+        StatutNotification statutPrecedent = notification.getStatut();
         notification.setStatut(statut);
-
         notificationRepository.save(notification);
 
         integrationLogService.logEvent(
                 TypeLog.ENVOI_NOTIFICATION,
                 StatutLog.SUCCES,
-                "Notification " + notificationId + " status changed to " + statut,
+                "Notification " + notificationId + " : statut " + statutPrecedent + " → " + statut,
                 notification.getCodingChallenge() != null ? notification.getCodingChallenge().getId() : null
         );
 
-        return true;
+        return new NotificationStatutUpdateResponse(
+                notificationId,
+                statutPrecedent,
+                statut,
+                true,
+                "Statut mis à jour : " + statutPrecedent + " → " + statut
+        );
     }
 
     @Override
@@ -184,7 +192,10 @@ public class NotificationServiceImp implements NotificationService {
     }
 
     @Override
-    public NotificationDto notifyChallengeCompletion(Utilisateur utilisateur, CodingChallenge codingChallenge) {
+    public NotificationCreationResult notifyChallengeCompletion(
+            Utilisateur utilisateur,
+            CodingChallenge codingChallenge
+    ) {
         Optional<Notification> existing = notificationRepository.findByUtilisateurIdAndCodingChallengeId(
                 utilisateur.getId(),
                 codingChallenge.getId()
@@ -192,11 +203,17 @@ public class NotificationServiceImp implements NotificationService {
         if (existing.isPresent()) {
             integrationLogService.logEvent(
                     TypeLog.ENVOI_NOTIFICATION, StatutLog.INFO,
-                    "Notification already exists for user " + utilisateur.getEmail()
-                            + " and challenge " + codingChallenge.getTitre(),
+                    "Notification déjà existante pour " + utilisateur.getEmail()
+                            + " et le challenge " + codingChallenge.getTitre(),
                     codingChallenge.getId()
             );
-            return mapper.toNotificationDto(existing.get());
+            return new NotificationCreationResult(
+                    mapper.toNotificationDto(existing.get()),
+                    true,
+                    ResultatLivraisonEmail.NON_APPLICABLE,
+                    buildActionUrl(utilisateur, codingChallenge),
+                    "Notification déjà existante pour cet utilisateur et ce challenge — aucun doublon créé"
+            );
         }
         Notification notification = new Notification();
         notification.setUtilisateur(utilisateur);
@@ -206,40 +223,50 @@ public class NotificationServiceImp implements NotificationService {
         Notification saved = notificationRepository.save(notification);
         integrationLogService.logEvent(
                 TypeLog.ENVOI_NOTIFICATION, StatutLog.INFO,
-                "Notification created for user " + utilisateur.getEmail()
-                        + " and challenge " + codingChallenge.getTitre(),
+                "Notification créée pour " + utilisateur.getEmail()
+                        + " et le challenge " + codingChallenge.getTitre(),
                 codingChallenge.getId()
         );
+        String actionUrl = buildActionUrl(utilisateur, codingChallenge);
+        ResultatLivraisonEmail livraison;
+        String message;
         try {
-            emailSender.sendChallengeCompletionEmail(
-                    utilisateur,
-                    codingChallenge,
-                    buildActionUrl(utilisateur, codingChallenge)
-            );
-            saved.setStatut(
-                    notificationProperties.enabled()
-                            ? StatutNotification.ENVOYEE
-                            : StatutNotification.EN_ATTENTE
-            );
+            emailSender.sendChallengeCompletionEmail(utilisateur, codingChallenge, actionUrl);
+            if (notificationProperties.enabled()) {
+                saved.setStatut(StatutNotification.ENVOYEE);
+                livraison = ResultatLivraisonEmail.ENVOYE;
+                message = "Notification créée et e-mail envoyé à " + utilisateur.getEmail();
+            } else {
+                livraison = ResultatLivraisonEmail.DESACTIVE;
+                message = "Notification créée — envoi e-mail désactivé (mode sans notification)";
+            }
             notificationRepository.save(saved);
             integrationLogService.logEvent(
                     TypeLog.ENVOI_NOTIFICATION, StatutLog.SUCCES,
-                    notificationProperties.enabled()
-                            ? "Notification email sent to " + utilisateur.getEmail()
-                            : "Notification stored without email delivery (email disabled)",
+                    livraison == ResultatLivraisonEmail.ENVOYE
+                            ? "E-mail de notification envoyé à " + utilisateur.getEmail()
+                            : "Notification enregistrée sans envoi e-mail",
                     codingChallenge.getId()
             );
         } catch (RuntimeException exception) {
             saved.setStatut(StatutNotification.ECHEC);
             notificationRepository.save(saved);
+            livraison = ResultatLivraisonEmail.ECHEC;
+            message = "Notification créée mais échec d'envoi e-mail : " + exception.getMessage();
             integrationLogService.logEvent(
                     TypeLog.ENVOI_NOTIFICATION, StatutLog.ERREUR,
-                    "Failed to send notification to " + utilisateur.getEmail()
-                            + ": " + exception.getMessage(),
+                    "Échec envoi notification à " + utilisateur.getEmail()
+                            + " : " + exception.getMessage(),
                     codingChallenge.getId()
             );
         }
-        return mapper.toNotificationDto(saved);
+        return new NotificationCreationResult(
+                mapper.toNotificationDto(saved),
+                false,
+                livraison,
+                actionUrl,
+                message
+        );
     }
 
     @Override
@@ -255,15 +282,21 @@ public class NotificationServiceImp implements NotificationService {
                 seuil,
                 StatutFeedback.SOUMIS
         );
+        if (due.isEmpty()) {
+            log.debug(
+                    "Relance cycle: none due (wait {} after send, max {} relances, no submitted feedback)",
+                    relance.delay(),
+                    relance.max()
+            );
+            return 0;
+        }
         int sent = 0;
         for (Notification notification : due) {
             if (relancerUne(notification)) {
                 sent++;
             }
         }
-        if (sent > 0) {
-            log.info("Relance sent for {} unread notification(s)", sent);
-        }
+        log.info("Relance cycle: {} due, {} e-mail(s) sent", due.size(), sent);
         return sent;
     }
 

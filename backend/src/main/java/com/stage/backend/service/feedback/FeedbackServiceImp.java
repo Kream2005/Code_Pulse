@@ -1,4 +1,5 @@
 package com.stage.backend.service.feedback;
+import com.stage.backend.dto.common.ErreurValidation;
 import com.stage.backend.dto.feedback.FeedbackDetailsResponse;
 import com.stage.backend.dto.feedback.FeedbackFormResponse;
 import com.stage.backend.dto.feedback.FeedbackResponse;
@@ -23,7 +24,7 @@ import com.stage.backend.repository.NotificationRepository;
 import com.stage.backend.repository.QuestionFeedbackRepository;
 import com.stage.backend.repository.ReponseFeedbackRepository;
 import com.stage.backend.repository.UtilisateurRepository;
-import com.stage.backend.service.integrationlog.IntegrationLogService;
+import com.stage.backend.exception.FeedbackValidationException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +36,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import com.stage.backend.service.integrationlog.IntegrationLogService;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -58,34 +61,54 @@ public class FeedbackServiceImp implements FeedbackService {
 
     @Override
     public FeedbackResponse submitFeedback(SubmitFeedbackRequest request, Long utilisateurId) {
+        List<ErreurValidation> erreurs = new ArrayList<>();
+
         if (repository.existsByUtilisateurIdAndCodingChallengeId(utilisateurId, request.codingChallengeId())
                 || repository.existsByCodingChallengeId(request.codingChallengeId())) {
             integrationLogService.logEvent(
                     TypeLog.FEEDBACK,
                     StatutLog.WARNING,
-                    "Duplicate feedback submit for challenge " + request.codingChallengeId(),
+                    "Tentative de doublon feedback pour le challenge " + request.codingChallengeId(),
                     request.codingChallengeId()
             );
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "Feedback already submitted for this challenge"
-            );
+            erreurs.add(new ErreurValidation(
+                    "codingChallengeId",
+                    null,
+                    "DOUBLON",
+                    "Un feedback a déjà été soumis pour ce coding challenge"
+            ));
         }
+
         CodingChallenge challenge = codingChallengeRepository.findById(request.codingChallengeId())
                 .orElseThrow(() -> new EntityNotFoundException(
-                        "Coding challenge not found: " + request.codingChallengeId()
+                        "Coding challenge introuvable : id=" + request.codingChallengeId()
                 ));
+
+        if (challenge.isSupprime()) {
+            erreurs.add(new ErreurValidation(
+                    "codingChallengeId",
+                    null,
+                    "CHALLENGE_ARCHIVE",
+                    "Ce coding challenge a été archivé"
+            ));
+        }
+
+        if (request.statut() == StatutFeedback.SOUMIS) {
+            collecterErreursQuestionsObligatoires(erreurs, request);
+            collecterErreursFormatsReponses(erreurs, request);
+        }
+
+        if (!erreurs.isEmpty()) {
+            throw new FeedbackValidationException(
+                    erreurs.size() + " erreur(s) de validation sur la soumission du feedback",
+                    erreurs
+            );
+        }
+
         Utilisateur utilisateur = utilisateurRepository.findById(utilisateurId)
                 .orElseThrow(() -> new EntityNotFoundException(
-                        "User not found: " + utilisateurId
+                        "Utilisateur introuvable : id=" + utilisateurId
                 ));
-        if (request.statut() == StatutFeedback.SOUMIS) {
-            validateMandatoryQuestions(request);
-            validateAnswerFormats(request);
-        }
-        if (challenge.isSupprime()) {
-            throw new ResponseStatusException(HttpStatus.GONE, "This coding challenge has been archived");
-        }
         Feedback feedback = new Feedback();
         feedback.setUtilisateur(utilisateur);
         feedback.setCodingChallenge(challenge);
@@ -133,7 +156,7 @@ public class FeedbackServiceImp implements FeedbackService {
         return mapper.toResponseDto(saved);
     }
 
-    private void validateMandatoryQuestions(SubmitFeedbackRequest request) {
+    private void collecterErreursQuestionsObligatoires(List<ErreurValidation> erreurs, SubmitFeedbackRequest request) {
         List<QuestionFeedback> mandatory = questionFeedbackRepository.findByObligatoire(true).stream()
                 .filter(q -> !q.isSupprime())
                 .toList();
@@ -147,18 +170,20 @@ public class FeedbackServiceImp implements FeedbackService {
                 integrationLogService.logEvent(
                         TypeLog.FEEDBACK,
                         StatutLog.ERREUR,
-                        "Missing mandatory answer: " + q.getLibelle(),
+                        "Réponse obligatoire manquante : " + q.getLibelle(),
                         request.codingChallengeId()
                 );
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Missing answer for mandatory question: " + q.getLibelle()
-                );
+                erreurs.add(new ErreurValidation(
+                        "reponses",
+                        q.getId(),
+                        "REPONSE_OBLIGATOIRE_MANQUANTE",
+                        "Réponse obligatoire manquante pour : \"" + q.getLibelle() + "\""
+                ));
             }
         }
     }
 
-    private void validateAnswerFormats(SubmitFeedbackRequest request) {
+    private void collecterErreursFormatsReponses(List<ErreurValidation> erreurs, SubmitFeedbackRequest request) {
         if (request.reponses() == null) {
             return;
         }
@@ -168,18 +193,31 @@ public class FeedbackServiceImp implements FeedbackService {
                 continue;
             }
             QuestionFeedback question = questionFeedbackRepository.findById(answerReq.questionId())
-                    .orElseThrow(() -> new EntityNotFoundException(
-                            "Question not found: " + answerReq.questionId()
-                    ));
+                    .orElse(null);
+            if (question == null) {
+                erreurs.add(new ErreurValidation(
+                        "reponses",
+                        answerReq.questionId(),
+                        "QUESTION_INTROUVABLE",
+                        "Question introuvable : id=" + answerReq.questionId()
+                ));
+                continue;
+            }
             if (question.getType() == TypeQuestion.NOTE) {
-                validateNoteAnswer(question, valeur.trim(), request.codingChallengeId());
+                collecterErreurNote(erreurs, question, valeur.trim(), answerReq.questionId(), request.codingChallengeId());
             } else if (question.getType() == TypeQuestion.CHOIX) {
-                validateChoixAnswer(question, valeur.trim(), request.codingChallengeId());
+                collecterErreurChoix(erreurs, question, valeur.trim(), answerReq.questionId(), request.codingChallengeId());
             }
         }
     }
 
-    private void validateNoteAnswer(QuestionFeedback question, String valeur, Long challengeId) {
+    private void collecterErreurNote(
+            List<ErreurValidation> erreurs,
+            QuestionFeedback question,
+            String valeur,
+            Long questionId,
+            Long challengeId
+    ) {
         String normalized = normalizeNoteValue(valeur);
         float parsed;
         try {
@@ -188,19 +226,48 @@ public class FeedbackServiceImp implements FeedbackService {
             integrationLogService.logEvent(
                     TypeLog.FEEDBACK,
                     StatutLog.ERREUR,
-                    "Invalid NOTE answer for: " + question.getLibelle(),
+                    "Réponse NOTE invalide pour : " + question.getLibelle(),
                     challengeId
             );
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Answer for \"" + question.getLibelle() + "\" must be a number (e.g. 3.5)"
-            );
+            erreurs.add(new ErreurValidation(
+                    "reponses",
+                    questionId,
+                    "NOTE_INVALIDE",
+                    "La réponse à \"" + question.getLibelle() + "\" doit être un nombre (ex. 3.5)"
+            ));
+            return;
         }
         if (Float.isNaN(parsed) || Float.isInfinite(parsed) || parsed < 0f || parsed > 5f) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Answer for \"" + question.getLibelle() + "\" must be a number between 0 and 5"
+            erreurs.add(new ErreurValidation(
+                    "reponses",
+                    questionId,
+                    "NOTE_HORS_PLAGE",
+                    "La réponse à \"" + question.getLibelle() + "\" doit être un nombre entre 0 et 5"
+            ));
+        }
+    }
+
+    private void collecterErreurChoix(
+            List<ErreurValidation> erreurs,
+            QuestionFeedback question,
+            String valeur,
+            Long questionId,
+            Long challengeId
+    ) {
+        List<String> options = question.getChoix() == null ? List.of() : question.getChoix();
+        if (options.isEmpty() || options.stream().noneMatch(valeur::equals)) {
+            integrationLogService.logEvent(
+                    TypeLog.FEEDBACK,
+                    StatutLog.ERREUR,
+                    "Réponse CHOIX invalide pour : " + question.getLibelle(),
+                    challengeId
             );
+            erreurs.add(new ErreurValidation(
+                    "reponses",
+                    questionId,
+                    "CHOIX_INVALIDE",
+                    "La réponse à \"" + question.getLibelle() + "\" doit être l'une des options proposées"
+            ));
         }
     }
 
@@ -214,22 +281,6 @@ public class FeedbackServiceImp implements FeedbackService {
             return "0" + trimmed;
         }
         return trimmed;
-    }
-
-    private void validateChoixAnswer(QuestionFeedback question, String valeur, Long challengeId) {
-        List<String> options = question.getChoix() == null ? List.of() : question.getChoix();
-        if (options.isEmpty() || options.stream().noneMatch(valeur::equals)) {
-            integrationLogService.logEvent(
-                    TypeLog.FEEDBACK,
-                    StatutLog.ERREUR,
-                    "Invalid CHOIX answer for: " + question.getLibelle(),
-                    challengeId
-            );
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Answer for \"" + question.getLibelle() + "\" must be one of the proposed choices"
-            );
-        }
     }
 
     @Override

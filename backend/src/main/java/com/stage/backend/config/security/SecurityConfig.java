@@ -56,6 +56,8 @@ public class SecurityConfig {
                                 .requestMatchers(HttpMethod.POST, "/auth/forgot-password").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/auth/reset-info").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/auth/reset-password").permitAll()
+                                .requestMatchers("/dev/mailbox", "/dev/mailbox/**").permitAll()
+                                .requestMatchers("/dev/relance", "/dev/relance/**").permitAll()
                                 .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth -> oauth

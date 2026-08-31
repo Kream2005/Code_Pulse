@@ -1,6 +1,8 @@
 package com.stage.backend.controlleur.auth;
 
+import com.stage.backend.dto.demande.DemandeMotDePasseResponse;
 import com.stage.backend.dto.demande.ForgotPasswordRequest;
+import com.stage.backend.dto.demande.ResetInfoResponse;
 import com.stage.backend.dto.login.LoginRequest;
 import com.stage.backend.dto.login.LoginResponse;
 import com.stage.backend.dto.login.ResetPasswordRequest;
@@ -12,8 +14,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -44,20 +44,15 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<Map<String, String>> forgotPassword(
+    public ResponseEntity<DemandeMotDePasseResponse> forgotPassword(
             @Valid @RequestBody ForgotPasswordRequest request
     ) {
-        demandeReinitialisationService.soumettreDemande(request.email());
-        return ResponseEntity.ok(Map.of(
-                "message",
-                "If an account exists for this email, an administrator will process your request."
-        ));
+        return ResponseEntity.ok(demandeReinitialisationService.soumettreDemande(request.email()));
     }
 
     @GetMapping("/reset-info")
-    public ResponseEntity<Map<String, String>> resetInfo(@RequestParam String token) {
-        String email = demandeReinitialisationService.getEmailByResetToken(token);
-        return ResponseEntity.ok(Map.of("email", email));
+    public ResponseEntity<ResetInfoResponse> resetInfo(@RequestParam String token) {
+        return ResponseEntity.ok(demandeReinitialisationService.getResetInfo(token));
     }
 
     @PostMapping("/reset-password")

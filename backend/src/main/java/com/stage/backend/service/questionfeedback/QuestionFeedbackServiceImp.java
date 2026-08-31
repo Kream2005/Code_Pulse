@@ -1,6 +1,8 @@
 package com.stage.backend.service.questionfeedback;
 
+import com.stage.backend.dto.common.SuppressionResponse;
 import com.stage.backend.dto.questionfeedback.CreateQuestionFeedbackRequest;
+import com.stage.backend.exception.ErreurMetierException;
 import com.stage.backend.dto.questionfeedback.QuestionFeedbackResponse;
 import com.stage.backend.entity.QuestionFeedback;
 import com.stage.backend.enums.StatutLog;
@@ -74,18 +76,32 @@ public class QuestionFeedbackServiceImp implements QuestionFeedbackService{
     }
 
     @Override
-    public boolean supprimerQuestion(Long questionId) {
+    public SuppressionResponse supprimerQuestion(Long questionId) {
         return repository.findById(questionId).map(q -> {
             q.setSupprime(true);
             repository.save(q);
             integrationLogService.logEvent(
                     TypeLog.FEEDBACK,
                     StatutLog.SUCCES,
-                    "Question soft-deleted (answers kept): " + q.getLibelle(),
+                    "Question supprimée (soft-delete, réponses conservées) : " + q.getLibelle(),
                     null
             );
-            return true;
-        }).orElse(false);
+            return new SuppressionResponse(
+                    true,
+                    questionId,
+                    "QUESTION_FEEDBACK",
+                    true,
+                    0,
+                    "Question archivée avec succès (réponses conservées)"
+            );
+        }).orElseGet(() -> new SuppressionResponse(
+                false,
+                questionId,
+                "QUESTION_FEEDBACK",
+                true,
+                0,
+                "Question introuvable : id=" + questionId
+        ));
     }
 
     @Override
@@ -157,9 +173,10 @@ public class QuestionFeedbackServiceImp implements QuestionFeedbackService{
         if (type == TypeQuestion.CHOIX) {
             List<String> cleaned = normalizeChoices(rawChoix);
             if (cleaned.size() < 2) {
-                throw new ResponseStatusException(
+                throw new ErreurMetierException(
                         HttpStatus.BAD_REQUEST,
-                        "A CHOIX question requires at least 2 options"
+                        "CHOIX_INSUFFISANT",
+                        "Une question CHOIX nécessite au moins 2 options"
                 );
             }
             question.setChoix(cleaned);

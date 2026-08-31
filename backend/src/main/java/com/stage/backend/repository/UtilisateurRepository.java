@@ -23,6 +23,12 @@ public interface UtilisateurRepository extends JpaRepository<Utilisateur, Long> 
     boolean existsByUserName(String userName);
     Optional<Utilisateur> findBySetupToken(String setupToken);
 
+    @Query("""
+            SELECT u FROM utilisateur u
+            WHERE LOWER(u.email) = LOWER(:email)
+            """)
+    Optional<Utilisateur> findByEmailIgnoreCase(@Param("email") String email);
+
     Page<Utilisateur> findBySupprimeFalse(Pageable pageable);
 
     List<Utilisateur> findBySupprimeFalse();

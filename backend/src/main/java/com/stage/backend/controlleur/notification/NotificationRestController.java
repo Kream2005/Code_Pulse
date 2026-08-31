@@ -2,6 +2,8 @@ package com.stage.backend.controlleur.notification;
 
 import com.stage.backend.dto.notification.CreateNotificationRequest;
 import com.stage.backend.dto.notification.NotificationDto;
+import com.stage.backend.dto.notification.NotificationEnvoiResponse;
+import com.stage.backend.dto.notification.NotificationStatutUpdateResponse;
 import com.stage.backend.enums.StatutNotification;
 import com.stage.backend.security.JwtUtils;
 import com.stage.backend.security.SecurityRoles;
@@ -26,7 +28,7 @@ public class NotificationRestController {
 
     @PostMapping
     @PreAuthorize(SecurityRoles.ADMIN_CHALLENGE)
-    public ResponseEntity<NotificationDto> envoyerNotification(
+    public ResponseEntity<NotificationEnvoiResponse> envoyerNotification(
             @Valid @RequestBody CreateNotificationRequest request
     ) {
         return ResponseEntity.ok(service.envoyerNotification(request));
@@ -93,7 +95,7 @@ public class NotificationRestController {
 
     @PatchMapping("/update-statut/{id}/statut")
     @PreAuthorize(SecurityRoles.USER_OR_READ_FEEDBACKS)
-    public ResponseEntity<Boolean> changerStatut(
+    public ResponseEntity<NotificationStatutUpdateResponse> changerStatut(
             @PathVariable Long id,
             @RequestParam StatutNotification statut
     ) {
@@ -129,7 +131,7 @@ public class NotificationRestController {
                         || a.getAuthority().equals("ROLE_MANAGER_RH")
                         || a.getAuthority().equals("ROLE_ADMIN_CODEPULSE"));
         if (!admin) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès refusé");
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.stage.backend.service.questionfeedback;
 
+import com.stage.backend.dto.common.SuppressionResponse;
 import com.stage.backend.dto.questionfeedback.CreateQuestionFeedbackRequest;
 import com.stage.backend.dto.questionfeedback.QuestionFeedbackResponse;
 import com.stage.backend.enums.TypeQuestion;
@@ -12,7 +13,7 @@ public interface QuestionFeedbackService {
 
     QuestionFeedbackResponse modifierQuestion(QuestionFeedbackResponse request, Long id);
 
-    boolean supprimerQuestion(Long questionId);
+    SuppressionResponse supprimerQuestion(Long questionId);
 
     QuestionFeedbackResponse getQuestion(Long questionId);
 

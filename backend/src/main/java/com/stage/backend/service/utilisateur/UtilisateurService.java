@@ -1,7 +1,9 @@
 package com.stage.backend.service.utilisateur;
 
 import com.stage.backend.dto.profile.ProfileDto;
+import com.stage.backend.dto.common.SuppressionResponse;
 import com.stage.backend.dto.utilisateur.CreateUtilisateurRequest;
+import com.stage.backend.dto.utilisateur.PromoteRoleResponse;
 import com.stage.backend.dto.utilisateur.UpdateUtilisateurRequest;
 import com.stage.backend.dto.utilisateur.UtilisateurDto;
 import com.stage.backend.enums.Role;
@@ -15,7 +17,7 @@ public interface UtilisateurService {
 
     UtilisateurDto modifierUtilisateur(UpdateUtilisateurRequest request, Long userId);
 
-    boolean supprimerUtilisateur(Long userId);
+    SuppressionResponse supprimerUtilisateur(Long userId);
 
     UtilisateurDto getUtilisateur(Long userId);
 
@@ -46,7 +48,7 @@ public interface UtilisateurService {
 
     boolean existsByEmail(String email);
 
-    UtilisateurDto promoteRole(Long userId, Role role);
+    PromoteRoleResponse promoteRole(Long userId, Role role);
 
     ZonedDateTime getLastLogin(Long userId);
 }

@@ -1,7 +1,10 @@
 package com.stage.backend.service.notification;
 
 import com.stage.backend.dto.notification.CreateNotificationRequest;
+import com.stage.backend.dto.notification.NotificationCreationResult;
 import com.stage.backend.dto.notification.NotificationDto;
+import com.stage.backend.dto.notification.NotificationEnvoiResponse;
+import com.stage.backend.dto.notification.NotificationStatutUpdateResponse;
 import com.stage.backend.entity.CodingChallenge;
 import com.stage.backend.entity.Utilisateur;
 import com.stage.backend.enums.StatutNotification;
@@ -11,7 +14,7 @@ import java.util.List;
 
 public interface NotificationService {
 
-    NotificationDto envoyerNotification(CreateNotificationRequest request);
+    NotificationEnvoiResponse envoyerNotification(CreateNotificationRequest request);
 
     NotificationDto getNotification(Long notificationId);
 
@@ -35,13 +38,13 @@ public interface NotificationService {
             String keyword, StatutNotification statut, String tag, int page, int size
     );
 
-    boolean changerStatut(Long notificationId, StatutNotification statut);
+    NotificationStatutUpdateResponse changerStatut(Long notificationId, StatutNotification statut);
 
     long countNotifications();
 
     long countNotificationsByStatut(StatutNotification statut);
 
-    NotificationDto notifyChallengeCompletion(Utilisateur utilisateur, CodingChallenge codingChallenge);
+    NotificationCreationResult notifyChallengeCompletion(Utilisateur utilisateur, CodingChallenge codingChallenge);
 
     int relancerNotificationsNonLues();
 }

@@ -1,5 +1,6 @@
 package com.stage.backend.controlleur.feedback;
 
+import com.stage.backend.dto.common.SuppressionResponse;
 import com.stage.backend.dto.reponsefeedback.CreateReponseFeedbackRequest;
 import com.stage.backend.dto.reponsefeedback.ReponseFeedbackResponse;
 import com.stage.backend.security.SecurityRoles;
@@ -34,11 +35,13 @@ public class ReponseFeedbackRestController {
 
     @DeleteMapping("/delete-reponse/{id}")
     @PreAuthorize(SecurityRoles.ADMIN_CHALLENGE)
-    public ResponseEntity<Void> supprimerReponse(
+    public ResponseEntity<SuppressionResponse> supprimerReponse(
             @PathVariable Long id
     ) {
-        service.supprimerReponse(id);
-        return ResponseEntity.noContent().build();
+        SuppressionResponse response = service.supprimerReponse(id);
+        return response.supprime()
+                ? ResponseEntity.ok(response)
+                : ResponseEntity.status(404).body(response);
     }
 
     @GetMapping("/get-reponse/{id}")
