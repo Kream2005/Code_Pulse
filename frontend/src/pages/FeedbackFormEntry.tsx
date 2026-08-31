@@ -7,6 +7,7 @@ export default function FeedbackFormEntry() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const challengeId = params.get('challengeId');
+  const recipientId = params.get('recipientId');
 
   useEffect(() => {
     clearToken();
@@ -14,9 +15,11 @@ export default function FeedbackFormEntry() {
       navigate('/login', { replace: true });
       return;
     }
-    const returnUrl = encodeURIComponent(`/feedback/form?challengeId=${challengeId}`);
+    const qs = new URLSearchParams({ challengeId });
+    if (recipientId) qs.set('recipientId', recipientId);
+    const returnUrl = encodeURIComponent(`/feedback/form?${qs.toString()}`);
     navigate(`/login?returnUrl=${returnUrl}`, { replace: true });
-  }, [challengeId, navigate]);
+  }, [challengeId, recipientId, navigate]);
 
   return null;
 }

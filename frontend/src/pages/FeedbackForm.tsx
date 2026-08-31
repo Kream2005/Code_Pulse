@@ -45,6 +45,8 @@ export default function FeedbackFormPage() {
   const navigate = useNavigate();
   const challengeIdParam = params.get('challengeId');
   const challengeId = challengeIdParam ? Number(challengeIdParam) : null;
+  const recipientIdParam = params.get('recipientId');
+  const recipientId = recipientIdParam ? Number(recipientIdParam) : null;
 
   const [formData, setFormData] = useState<FeedbackFormResponse | null>(null);
   const [answers, setAnswers] = useState<string[]>([]);
@@ -74,6 +76,21 @@ export default function FeedbackFormPage() {
 
   useEffect(() => {
     if (challengeId) {
+      if (recipientId) {
+        const uid = getUserId();
+        if (uid !== null && uid !== recipientId) {
+          clearToken();
+          const qs = new URLSearchParams({
+            challengeId: String(challengeId),
+            recipientId: String(recipientId),
+          });
+          navigate(
+            `/login?returnUrl=${encodeURIComponent(`/feedback/form?${qs.toString()}`)}`,
+            { replace: true }
+          );
+          return;
+        }
+      }
       setLoading(true);
       getFeedbackForm(challengeId)
         .then((data) => {
@@ -121,7 +138,7 @@ export default function FeedbackFormPage() {
       })
       .catch((err) => setError(err.response?.data?.message ?? 'Chargement impossible.'))
       .finally(() => setLoading(false));
-  }, [challengeId, page, size, search, statut, tag]);
+  }, [challengeId, recipientId, navigate, page, size, search, statut, tag]);
 
   function onSearchChange(value: string) {
     setPage(1);

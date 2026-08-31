@@ -444,6 +444,8 @@ public class NotificationServiceImp implements NotificationService {
         }
         return notificationProperties.frontendBaseUrl()
                 + "/feedback/enter?challengeId="
-                + codingChallenge.getId();
+                + codingChallenge.getId()
+                + "&recipientId="
+                + utilisateur.getId();
     }
 }
