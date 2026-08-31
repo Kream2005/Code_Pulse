@@ -28,7 +28,9 @@ public class RelanceDevController {
                         "message",
                         sent > 0
                                 ? sent + " relance(s) envoyée(s)."
-                                : "Aucune relance due (attendre le délai configuré ou vérifier qu’aucun feedback n’est soumis)."
+                                : "Aucune relance due (attendre "
+                                        + "codepulse.notification.relance.delay après envoi, "
+                                        + "feedback non soumis, notification non archivée)."
                 )
         );
     }

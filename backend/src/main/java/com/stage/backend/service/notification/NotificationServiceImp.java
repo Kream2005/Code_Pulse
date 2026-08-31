@@ -22,6 +22,7 @@ import com.stage.backend.repository.FeedbackRepository;
 import com.stage.backend.repository.NotificationRepository;
 import com.stage.backend.repository.UtilisateurRepository;
 import com.stage.backend.service.integrationlog.IntegrationLogService;
+import com.stage.backend.util.SetupTokenConstants;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -323,7 +324,12 @@ public class NotificationServiceImp implements NotificationService {
         }
         ZonedDateTime seuil = ZonedDateTime.now().minus(relance.delay());
         List<Notification> due = notificationRepository.findDueForRelance(
-                Set.of(StatutNotification.EN_ATTENTE, StatutNotification.ENVOYEE, StatutNotification.ECHEC),
+                Set.of(
+                        StatutNotification.EN_ATTENTE,
+                        StatutNotification.ENVOYEE,
+                        StatutNotification.ECHEC,
+                        StatutNotification.LUE
+                ),
                 relance.max(),
                 seuil,
                 StatutFeedback.SOUMIS
@@ -352,7 +358,8 @@ public class NotificationServiceImp implements NotificationService {
         if (utilisateur == null || challenge == null) {
             return false;
         }
-        String actionUrl = resolveActionUrl(utilisateur, challenge);
+        rotateSetupToken(utilisateur);
+        String actionUrl = buildActionUrl(utilisateur, challenge);
         try {
             emailSender.sendChallengeRelanceEmail(
                     utilisateur,
@@ -391,17 +398,35 @@ public class NotificationServiceImp implements NotificationService {
         }
     }
 
-    private void refreshSetupTokenIfNeeded(Utilisateur utilisateur) {
+    private void ensureSetupToken(Utilisateur utilisateur) {
+        if (utilisateur.isCompteComplet()) {
+            return;
+        }
+        if (!SetupTokenConstants.isExpiredOrMissing(
+                utilisateur.getSetupToken(),
+                utilisateur.getSetupTokenExpiresAt()
+        )) {
+            utilisateur.setSetupTokenExpiresAt(SetupTokenConstants.expiresAtFromNow());
+            utilisateurRepository.save(utilisateur);
+            return;
+        }
+        utilisateur.setSetupToken(UUID.randomUUID().toString());
+        utilisateur.setSetupTokenExpiresAt(SetupTokenConstants.expiresAtFromNow());
+        utilisateurRepository.save(utilisateur);
+    }
+
+    /** Relance only: invalidate previous setup links and issue a fresh token. */
+    private void rotateSetupToken(Utilisateur utilisateur) {
         if (utilisateur.isCompteComplet()) {
             return;
         }
         utilisateur.setSetupToken(UUID.randomUUID().toString());
-        utilisateur.setSetupTokenExpiresAt(ZonedDateTime.now().plusHours(24));
+        utilisateur.setSetupTokenExpiresAt(SetupTokenConstants.expiresAtFromNow());
         utilisateurRepository.save(utilisateur);
     }
 
     private String resolveActionUrl(Utilisateur utilisateur, CodingChallenge codingChallenge) {
-        refreshSetupTokenIfNeeded(utilisateur);
+        ensureSetupToken(utilisateur);
         return buildActionUrl(utilisateur, codingChallenge);
     }
 
