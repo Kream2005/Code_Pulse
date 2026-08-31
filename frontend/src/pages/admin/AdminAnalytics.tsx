@@ -30,11 +30,11 @@ export default function AdminAnalytics() {
   const [tags, setTags] = useState<AverageScoreByTag[]>([]);
   const [watchTags, setWatchTags] = useState<TagStatistics[]>([]);
   const [stats, setStats] = useState<TagStatistics[]>([]);
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
-  const [tagPage, setTagPage] = useState(0);
+  const [tagPage, setTagPage] = useState(1);
   const [tagSize, setTagSize] = useState(10);
   const [tagSearch, setTagSearch] = useState('');
   const [statsSearch, setStatsSearch] = useState('');
@@ -60,12 +60,12 @@ export default function AdminAnalytics() {
   }, [page, size, statsSearch]);
 
   function onStatsSearchChange(value: string) {
-    setPage(0);
+    setPage(1);
     setStatsSearch(value);
   }
 
   function onTagSearchChange(value: string) {
-    setTagPage(0);
+    setTagPage(1);
     setTagSearch(value);
   }
 
@@ -77,13 +77,13 @@ export default function AdminAnalytics() {
 
   const tagTotalPages = Math.max(1, Math.ceil(filteredTags.length / tagSize) || 1);
   const pagedTags = useMemo(() => {
-    const start = tagPage * tagSize;
+    const start = (tagPage - 1) * tagSize;
     return filteredTags.slice(start, start + tagSize);
   }, [filteredTags, tagPage, tagSize]);
 
   useEffect(() => {
-    if (tagPage > 0 && tagPage >= tagTotalPages) {
-      setTagPage(Math.max(0, tagTotalPages - 1));
+    if (tagPage > 1 && tagPage > tagTotalPages) {
+      setTagPage(Math.max(1, tagTotalPages));
     }
   }, [tagPage, tagTotalPages]);
 
@@ -138,7 +138,7 @@ export default function AdminAnalytics() {
             size={tagSize}
             onPageChange={setTagPage}
             onSizeChange={(s) => {
-              setTagPage(0);
+              setTagPage(1);
               setTagSize(s);
             }}
           />
@@ -197,7 +197,7 @@ export default function AdminAnalytics() {
           size={size}
           onPageChange={setPage}
           onSizeChange={(s) => {
-            setPage(0);
+            setPage(1);
             setSize(s);
           }}
         />

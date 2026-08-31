@@ -292,7 +292,7 @@ pm.environment.set('challenge_id', String(item.challengeId));
                     "pm.test('Validation fail', () => pm.expect(pm.response.json().failed).to.be.at.least(1));"),
                 req("GET challenge by id", "GET", "{{spring}}/coding-challenges/get-coding-challenge/{{challenge_id}}"),
                 req("GET challenges page (search Postman)", "GET",
-                    "{{spring}}/coding-challenges/get-coding-challenges-pages/page?page=0&size=10&q=Postman"),
+                    "{{spring}}/coding-challenges/get-coding-challenges-pages/page?page=1&size=10&q=Postman"),
                 req("GET tags", "GET", "{{spring}}/coding-challenges/tags"),
                 req("GET count challenges", "GET", "{{spring}}/coding-challenges/count-coding-challenges"),
             ],
@@ -309,10 +309,10 @@ pm.environment.set('challenge_id', String(item.challengeId));
                 req("GET notifications by utilisateur", "GET",
                     "{{spring}}/notifications/get-notification-by-utilisateur?utilisateurId={{user_id}}"),
                 req("GET notifications page (user inbox)", "GET",
-                    "{{spring}}/notifications/get-notifications-by-utilisateur-pages/page?utilisateurId={{user_id}}&page=0&size=10"),
+                    "{{spring}}/notifications/get-notifications-by-utilisateur-pages/page?utilisateurId={{user_id}}&page=1&size=10"),
                 req("GET all notifications (admin)", "GET", "{{spring}}/notifications/get-all-notifications"),
                 req("GET notifications page + filtre ENVOYEE", "GET",
-                    "{{spring}}/notifications/get-notifications-pages/page?page=0&size=10&statut=ENVOYEE"),
+                    "{{spring}}/notifications/get-notifications-pages/page?page=1&size=10&statut=ENVOYEE"),
                 req("GET count notifications", "GET", "{{spring}}/notifications/count"),
                 req("GET count by statut ENVOYEE", "GET", "{{spring}}/notifications/count/statut?statut=ENVOYEE"),
                 req("PATCH statut → LUE", "PATCH",
@@ -360,7 +360,7 @@ pm.environment.set('feedback_id', String(pm.response.json().id));
 """, prerequest=SUBMIT_FEEDBACK_PREREQUEST),
                 req("GET feedback details", "GET", "{{spring}}/feedbacks/details/{{feedback_id}}"),
                 req("GET feedback pages (admin)", "GET",
-                    "{{spring}}/feedbacks/get-feedback-pages/page?page=0&size=10&tag=arrays"),
+                    "{{spring}}/feedbacks/get-feedback-pages/page?page=1&size=10&tag=arrays"),
                 req("GET average note (admin)", "GET", "{{spring}}/feedbacks/get-average-note"),
                 req("GET count feedbacks", "GET", "{{spring}}/feedbacks/count-all-feedbacks"),
                 req("Relance après SOUMIS — doit être 0", "GET", "{{spring}}/dev/relance/run",
@@ -374,7 +374,7 @@ pm.environment.set('feedback_id', String(pm.response.json().id));
                     '{"email":"demo.user@codepulse.local"}',
                     "pm.test('Forgot OK', () => pm.response.to.have.status(200));", auth=False),
                 req("GET demandes EN_ATTENTE (app admin)", "GET",
-                    "{{spring}}/demandes-reinit/page?page=0&size=10&statut=EN_ATTENTE", """
+                    "{{spring}}/demandes-reinit/page?page=1&size=10&statut=EN_ATTENTE", """
 pm.test('Demandes', () => pm.response.to.have.status(200));
 const page = pm.response.json();
 if (page.content && page.content.length) {

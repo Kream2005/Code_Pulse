@@ -7,6 +7,7 @@ import com.stage.backend.dto.codingchallenge.CodingChallengeDto;
 import com.stage.backend.kafka.event.CodingChallengeEvent;
 import com.stage.backend.security.SecurityRoles;
 import com.stage.backend.service.codingchallenge.CodingChallengeService;
+import com.stage.backend.util.PaginationUtils;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -80,12 +81,14 @@ public class CodingChallengeRestController {
     @GetMapping("/get-coding-challenges-pages/page")
     @PreAuthorize(SecurityRoles.READ_FEEDBACKS)
     public ResponseEntity<Page<CodingChallengeDto>> getCodingChallengesPage(
-            @RequestParam @Min(0) int page,
+            @RequestParam @Min(1) int page,
             @RequestParam @Min(1) int size,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String tag
     ) {
-        return ResponseEntity.ok(service.searchCodingChallenges(q, tag, page, size));
+        return ResponseEntity.ok(
+                service.searchCodingChallenges(q, tag, PaginationUtils.toSpringPageIndex(page), size)
+        );
     }
 
     @GetMapping("/tags")

@@ -8,12 +8,15 @@ import com.stage.backend.enums.StatutNotification;
 import com.stage.backend.security.JwtUtils;
 import com.stage.backend.security.SecurityRoles;
 import com.stage.backend.service.notification.NotificationService;
+import com.stage.backend.util.PaginationUtils;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -22,6 +25,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/notifications")
 @RequiredArgsConstructor
+@Validated
 public class NotificationRestController {
 
     private final NotificationService service;
@@ -57,14 +61,16 @@ public class NotificationRestController {
     @PreAuthorize(SecurityRoles.USER_OR_READ_FEEDBACKS)
     public ResponseEntity<Page<NotificationDto>> getNotificationsByUtilisateurPage(
             @RequestParam Long utilisateurId,
-            @RequestParam int page,
-            @RequestParam int size,
+            @RequestParam @Min(1) int page,
+            @RequestParam @Min(1) int size,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) StatutNotification statut,
             @RequestParam(required = false) String tag
     ) {
         assertNotificationAccess(utilisateurId);
-        return ResponseEntity.ok(service.searchNotificationsByUtilisateur(utilisateurId, q, statut, tag, page, size));
+        return ResponseEntity.ok(service.searchNotificationsByUtilisateur(
+                utilisateurId, q, statut, tag, PaginationUtils.toSpringPageIndex(page), size
+        ));
     }
 
     @GetMapping("/get-all-notifications")
@@ -76,13 +82,15 @@ public class NotificationRestController {
     @GetMapping("/get-notifications-pages/page")
     @PreAuthorize(SecurityRoles.ADMIN_CHALLENGE)
     public ResponseEntity<Page<NotificationDto>> getAllNotificationsPage(
-            @RequestParam int page,
-            @RequestParam int size,
+            @RequestParam @Min(1) int page,
+            @RequestParam @Min(1) int size,
             @RequestParam(required = false) StatutNotification statut,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String tag
     ) {
-        return ResponseEntity.ok(service.searchNotifications(q, statut, tag, page, size));
+        return ResponseEntity.ok(
+                service.searchNotifications(q, statut, tag, PaginationUtils.toSpringPageIndex(page), size)
+        );
     }
 
     @GetMapping("/get-notification-by-statut")

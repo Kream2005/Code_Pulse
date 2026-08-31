@@ -17,7 +17,7 @@ const FEEDBACK_STATUSES = ['EN_COURS', 'NON_SOUMIS', 'SOUMIS'];
 export default function MyFeedback() {
   const { t } = useI18n();
   const [items, setItems] = useState<FeedbackResponse[]>([]);
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
@@ -53,17 +53,17 @@ export default function MyFeedback() {
   }, [page, size, search, statut, tag, t]);
 
   function onSearchChange(value: string) {
-    setPage(0);
+    setPage(1);
     setSearch(value);
   }
 
   function onStatutChange(value: string) {
-    setPage(0);
+    setPage(1);
     setStatut(value);
   }
 
   function onTagChange(value: string) {
-    setPage(0);
+    setPage(1);
     setTag(value);
   }
 
@@ -153,7 +153,7 @@ export default function MyFeedback() {
           size={size}
           onPageChange={setPage}
           onSizeChange={(s) => {
-            setPage(0);
+            setPage(1);
             setSize(s);
           }}
         />

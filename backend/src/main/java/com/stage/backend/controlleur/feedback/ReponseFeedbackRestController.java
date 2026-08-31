@@ -5,6 +5,7 @@ import com.stage.backend.dto.reponsefeedback.CreateReponseFeedbackRequest;
 import com.stage.backend.dto.reponsefeedback.ReponseFeedbackResponse;
 import com.stage.backend.security.SecurityRoles;
 import com.stage.backend.service.reponsefeedback.ReponseFeedbackService;
+import com.stage.backend.util.PaginationUtils;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -61,10 +62,10 @@ public class ReponseFeedbackRestController {
     @GetMapping("/get-reponses-pages/page")
     @PreAuthorize(SecurityRoles.READ_FEEDBACKS)
     public ResponseEntity<Page<ReponseFeedbackResponse>> getReponsesPage(
-            @RequestParam @Min(0) int page,
+            @RequestParam @Min(1) int page,
             @RequestParam @Min(1) int size
     ) {
-        return ResponseEntity.ok(service.getReponsesPage(page, size));
+        return ResponseEntity.ok(service.getReponsesPage(PaginationUtils.toSpringPageIndex(page), size));
     }
 
     @GetMapping("/get-reponses-by-question")

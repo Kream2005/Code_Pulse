@@ -15,7 +15,7 @@ const QUESTION_TYPES = ['TEXTE', 'NOTE', 'CHOIX'];
 export default function AdminQuestions() {
   const { t } = useI18n();
   const [items, setItems] = useState<QuestionFeedbackDto[]>([]);
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
@@ -44,12 +44,12 @@ export default function AdminQuestions() {
   useEffect(reload, [page, size, search, typeFilter]);
 
   function onSearchChange(value: string) {
-    setPage(0);
+    setPage(1);
     setSearch(value);
   }
 
   function onTypeFilterChange(value: string) {
-    setPage(0);
+    setPage(1);
     setTypeFilter(value);
   }
 
@@ -247,7 +247,7 @@ export default function AdminQuestions() {
           size={size}
           onPageChange={setPage}
           onSizeChange={(s) => {
-            setPage(0);
+            setPage(1);
             setSize(s);
           }}
         />

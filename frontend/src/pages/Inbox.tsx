@@ -24,7 +24,7 @@ const NOTIF_STATUSES = ['EN_ATTENTE', 'ENVOYEE', 'LUE', 'ECHEC'];
 export default function Inbox({ admin = false }: { admin?: boolean }) {
   const { t } = useI18n();
   const [items, setItems] = useState<NotificationDto[]>([]);
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
@@ -79,17 +79,17 @@ export default function Inbox({ admin = false }: { admin?: boolean }) {
   }, [admin, page, size, statut, tag, search, t]);
 
   function onSearchChange(value: string) {
-    setPage(0);
+    setPage(1);
     setSearch(value);
   }
 
   function onStatutChange(value: string) {
-    setPage(0);
+    setPage(1);
     setStatut(value);
   }
 
   function onTagChange(value: string) {
-    setPage(0);
+    setPage(1);
     setTag(value);
   }
 
@@ -201,7 +201,7 @@ export default function Inbox({ admin = false }: { admin?: boolean }) {
           size={size}
           onPageChange={setPage}
           onSizeChange={(s) => {
-            setPage(0);
+            setPage(1);
             setSize(s);
           }}
         />

@@ -182,7 +182,7 @@ Répéter **A1–A5** et **A10–A15** pour chaque persona (dossier `01 — Role
 | # | Requête | Notes |
 |---|---------|-------|
 | U1 | `GET {{spring}}/utilisateurs/get-all-users` | Liste |
-| U2 | `GET {{spring}}/utilisateurs/get-users-pages/page?page=0&size=10&q=demo` | Recherche |
+| U2 | `GET {{spring}}/utilisateurs/get-users-pages/page?page=1&size=10&q=demo` | Recherche |
 | U3 | `GET {{spring}}/utilisateurs/get-user-by-email?email=demo.user@codepulse.local` | Sauver `user_id` |
 | U4 | `GET {{spring}}/utilisateurs/get-user/{{user_id}}` | Détail |
 | U5 | `GET {{spring}}/utilisateurs/exists?email=admin@codepulse.local` | `true` |
@@ -267,7 +267,7 @@ Compléter C1–C4 avec :
 
 | # | Requête | Attendu |
 |---|---------|---------|
-| C10 | `GET {{spring}}/coding-challenges/get-coding-challenges-pages/page?page=0&size=20&q=Postman` | Retrouve le titre |
+| C10 | `GET {{spring}}/coding-challenges/get-coding-challenges-pages/page?page=1&size=20&q=Postman` | Retrouve le titre |
 | C11 | `GET {{spring}}/coding-challenges/get-coding-challenge/{{challenge_id}}` | Détail |
 | C12 | `GET {{spring}}/coding-challenges/tags` | Contient `arrays` (ou tag utilisé) |
 | C13 | `GET {{spring}}/coding-challenges/count-coding-challenges` | ≥ 1 |
@@ -316,9 +316,9 @@ Vérifier aussi l’e-mail :
 |---|---------|-----|
 | N10 | `GET {{spring}}/notifications/get-notification/{{notification_id}}` | USER propriétaire ou admin |
 | N11 | `GET .../get-notification-by-utilisateur?utilisateurId={{user_id}}` | |
-| N12 | `GET .../get-notifications-by-utilisateur-pages/page?utilisateurId={{user_id}}&page=0&size=10` | |
+| N12 | `GET .../get-notifications-by-utilisateur-pages/page?utilisateurId={{user_id}}&page=1&size=10` | |
 | N13 | `GET .../get-all-notifications` | challenge / app admin |
-| N14 | `GET .../get-notifications-pages/page?page=0&size=10&statut=ENVOYEE` | |
+| N14 | `GET .../get-notifications-pages/page?page=1&size=10&statut=ENVOYEE` | |
 | N15 | `GET .../get-notification-by-statut?statut=EN_ATTENTE` | |
 | N16 | `GET .../count` et `.../count/statut?statut=ENVOYEE` | |
 
@@ -432,7 +432,7 @@ Body exemple :
 | F12 | Plus de relance possible pour cette notif (voir R3) |
 | F13 | `GET .../details/{{feedback_id}}` | détail + réponses |
 | F14 | `GET .../get-average-note` (admin) | numérique |
-| F15 | `GET .../get-feedback-pages/page?page=0&size=10&tag=arrays` | résultats |
+| F15 | `GET .../get-feedback-pages/page?page=1&size=10&tag=arrays` | résultats |
 
 Statuts feedback : `EN_COURS` · `NON_SOUMIS` · `SOUMIS`
 
@@ -463,7 +463,7 @@ Statuts feedback : `EN_COURS` · `NON_SOUMIS` · `SOUMIS`
 | Q1 | `POST .../questions-feedback/add-question` | NOTE / TEXTE / CHOIX |
 | Q2 | `PUT .../update-question/{{question_id}}` | |
 | Q3 | `GET .../get-all-questions` | |
-| Q4 | `GET .../get-questions-pages/page?page=0&size=10&type=NOTE` | |
+| Q4 | `GET .../get-questions-pages/page?page=1&size=10&type=NOTE` | |
 | Q5 | `GET .../get-questions-by-obligatoire?obligatoire=true` | |
 | Q6 | `DELETE .../delete-question/{{question_id}}` | soft-delete |
 
@@ -495,7 +495,7 @@ Exemple CHOIX :
 | # | Étape | Requête | Attendu |
 |---|-------|---------|---------|
 | P1 | Candidat | `POST {{spring}}/auth/forgot-password` `{ "email":"demo.user@codepulse.local" }` | **200** `resultat=CREE` (ou `DEJA_EN_ATTENTE`) |
-| P2 | App admin | `GET {{spring}}/demandes-reinit/page?page=0&size=10&statut=EN_ATTENTE` | Sauver `demande_id` |
+| P2 | App admin | `GET {{spring}}/demandes-reinit/page?page=1&size=10&statut=EN_ATTENTE` | Sauver `demande_id` |
 | P3a | App admin | `POST {{spring}}/demandes-reinit/{{demande_id}}/send-link` | E-mail lien ; statut `LIEN_ENVOYE` |
 | P3b | *Alternative* | `POST .../temporary-password` `{ "temporaryPassword":"TempPass123!" }` | E-mail MDP temp |
 | P4 | Anonyme | `GET {{spring}}/auth/reset-info?token={{reset_token}}` | `valide=true` |
@@ -535,8 +535,8 @@ Tester **chaque dashboard avec le bon rôle** + 403 avec un mauvais rôle.
 | Y10 | `GET .../bottom-challenges?limit=5` | |
 | Y11 | `GET .../lowest-scoring-tags?limit=5` | |
 | Y12 | `GET .../mandatory-question-response-rates` | |
-| Y13 | `GET .../challenge-statistics/page?page=0&size=10` | READ_FEEDBACKS |
-| Y14 | `GET .../tag-statistics/page?page=0&size=10` | |
+| Y13 | `GET .../challenge-statistics/page?page=1&size=10` | READ_FEEDBACKS |
+| Y14 | `GET .../tag-statistics/page?page=1&size=10` | |
 | Y15 | `GET .../export?startDate=2024-01-01T00:00:00Z&endDate=2030-01-01T00:00:00Z&format=csv` | fichier / payload |
 
 Anormaux : USER sur `/dashboard/manager` → **403** ; params manquants → **400**.
@@ -548,7 +548,7 @@ Anormaux : USER sur `/dashboard/manager` → **403** ; params manquants → **40
 | # | Requête |
 |---|---------|
 | L1 | `GET {{spring}}/integration-logs/get-all-integration-logs` |
-| L2 | `GET .../get-integration-logs-pages/page?page=0&size=20&type=AUTH` |
+| L2 | `GET .../get-integration-logs-pages/page?page=1&size=20&type=AUTH` |
 | L3 | `GET .../get-integration-logs-by-type?type=ENVOI_NOTIFICATION` |
 | L4 | `GET .../get-integration-logs-by-type?type=RELANCE` |
 | L5 | `GET .../get-integration-logs-by-type?type=FEEDBACK` |

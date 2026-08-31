@@ -585,7 +585,7 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{spring}}/coding-challenges/get-coding-challenges-pages/page?page=0&size=10&q=Postman",
+            "url": "{{spring}}/coding-challenges/get-coding-challenges-pages/page?page=1&size=10&q=Postman",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -807,7 +807,7 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{spring}}/notifications/get-notifications-by-utilisateur-pages/page?utilisateurId={{user_id}}&page=0&size=10",
+            "url": "{{spring}}/notifications/get-notifications-by-utilisateur-pages/page?utilisateurId={{user_id}}&page=1&size=10",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -853,7 +853,7 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{spring}}/notifications/get-notifications-pages/page?page=0&size=10&statut=ENVOYEE",
+            "url": "{{spring}}/notifications/get-notifications-pages/page?page=1&size=10&statut=ENVOYEE",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1247,7 +1247,7 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{spring}}/feedbacks/get-feedback-pages/page?page=0&size=10&tag=arrays",
+            "url": "{{spring}}/feedbacks/get-feedback-pages/page?page=1&size=10&tag=arrays",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -1366,7 +1366,7 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{spring}}/demandes-reinit/page?page=0&size=10&statut=EN_ATTENTE",
+            "url": "{{spring}}/demandes-reinit/page?page=1&size=10&statut=EN_ATTENTE",
             "auth": {
               "type": "bearer",
               "bearer": [

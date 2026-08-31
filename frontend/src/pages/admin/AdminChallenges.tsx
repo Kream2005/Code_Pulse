@@ -18,7 +18,7 @@ import { useI18n } from '../../i18n/I18nContext';
 export default function AdminChallenges() {
   const { t } = useI18n();
   const [items, setItems] = useState<CodingChallengeDto[]>([]);
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
@@ -46,8 +46,8 @@ export default function AdminChallenges() {
           setItems(data.content);
           setTotalPages(data.totalPages);
           setTotalElements(data.totalElements);
-          if (data.content.length === 0 && data.totalPages > 0 && page > 0) {
-            setPage((p) => Math.max(0, p - 1));
+          if (data.content.length === 0 && data.totalPages > 0 && page > 1) {
+            setPage((p) => Math.max(1, p - 1));
           }
         })
         .catch((err) => setError(err.response?.data?.message ?? 'Chargement impossible.'))
@@ -61,12 +61,12 @@ export default function AdminChallenges() {
   }, [reload]);
 
   function onSearchChange(value: string) {
-    setPage(0);
+    setPage(1);
     setSearch(value);
   }
 
   function onTagChange(value: string) {
-    setPage(0);
+    setPage(1);
     setTag(value);
   }
 
@@ -187,7 +187,7 @@ export default function AdminChallenges() {
           size={size}
           onPageChange={setPage}
           onSizeChange={(s) => {
-            setPage(0);
+            setPage(1);
             setSize(s);
           }}
         />

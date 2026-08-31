@@ -234,7 +234,7 @@ Content-Type: application/json
 ### Inbox candidat
 
 ```http
-GET {{spring}}/notifications/get-notifications-by-utilisateur-pages/page?utilisateurId={{user_id}}&page=0&size=10
+GET {{spring}}/notifications/get-notifications-by-utilisateur-pages/page?utilisateurId={{user_id}}&page=1&size=10
 Authorization: Bearer {{token_user}}
 ```
 

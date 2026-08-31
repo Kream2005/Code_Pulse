@@ -6,11 +6,14 @@ import com.stage.backend.dto.demande.SetTemporaryPasswordRequest;
 import com.stage.backend.enums.StatutDemandeReinit;
 import com.stage.backend.security.SecurityRoles;
 import com.stage.backend.service.demande.DemandeReinitialisationService;
+import com.stage.backend.util.PaginationUtils;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,6 +21,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/demandes-reinit")
 @RequiredArgsConstructor
+@Validated
 public class DemandeReinitialisationRestController {
 
     private final DemandeReinitialisationService service;
@@ -35,10 +39,12 @@ public class DemandeReinitialisationRestController {
     public ResponseEntity<Page<DemandeReinitialisationDto>> listerPage(
             @RequestParam(required = false) StatutDemandeReinit statut,
             @RequestParam(required = false) String q,
-            @RequestParam int page,
-            @RequestParam int size
+            @RequestParam @Min(1) int page,
+            @RequestParam @Min(1) int size
     ) {
-        return ResponseEntity.ok(service.rechercherPage(q, statut, page, size));
+        return ResponseEntity.ok(
+                service.rechercherPage(q, statut, PaginationUtils.toSpringPageIndex(page), size)
+        );
     }
 
     @PostMapping("/{id}/send-link")

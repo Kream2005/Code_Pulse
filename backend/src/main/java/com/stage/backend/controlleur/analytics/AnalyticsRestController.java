@@ -7,6 +7,7 @@ import com.stage.backend.security.JwtUtils;
 import com.stage.backend.security.SecurityRoles;
 import com.stage.backend.service.analytics.AnalyticsService;
 import com.stage.backend.service.integrationlog.IntegrationLogService;
+import com.stage.backend.util.PaginationUtils;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -92,23 +93,27 @@ public class AnalyticsRestController {
     @GetMapping("/challenge-statistics/page")
     @PreAuthorize(SecurityRoles.READ_FEEDBACKS)
     public ResponseEntity<Page<ChallengeStatisticsResponse>> getChallengeStatisticsPage(
-            @RequestParam @Min(0) int page,
+            @RequestParam @Min(1) int page,
             @RequestParam @Min(1) int size,
             @RequestParam(required = false) String q
     ) {
         logAccess("challenge-statistics-page");
-        return ResponseEntity.ok(analyticsService.searchChallengeStatistics(q, page, size));
+        return ResponseEntity.ok(
+                analyticsService.searchChallengeStatistics(q, PaginationUtils.toSpringPageIndex(page), size)
+        );
     }
 
     @GetMapping("/tag-statistics/page")
     @PreAuthorize(SecurityRoles.ANALYTICS)
     public ResponseEntity<Page<TagStatisticsResponse>> getTagStatisticsPage(
-            @RequestParam @Min(0) int page,
+            @RequestParam @Min(1) int page,
             @RequestParam @Min(1) int size,
             @RequestParam(required = false) String q
     ) {
         logAccess("tag-statistics-page");
-        return ResponseEntity.ok(analyticsService.searchTagStatistics(q, page, size));
+        return ResponseEntity.ok(
+                analyticsService.searchTagStatistics(q, PaginationUtils.toSpringPageIndex(page), size)
+        );
     }
 
     @GetMapping("/lowest-scoring-tags")

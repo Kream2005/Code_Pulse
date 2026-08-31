@@ -15,7 +15,7 @@ const STAFF_ROLES = ['MANAGER_RH', 'ADMIN_CODING_CHALLENGE', 'ADMIN_CODEPULSE'];
 export default function AdminUsers() {
   const { t } = useI18n();
   const [items, setItems] = useState<UtilisateurDto[]>([]);
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
@@ -46,12 +46,12 @@ export default function AdminUsers() {
   useEffect(reload, [page, size, search, roleFilter]);
 
   function onSearchChange(value: string) {
-    setPage(0);
+    setPage(1);
     setSearch(value);
   }
 
   function onRoleFilterChange(value: string) {
-    setPage(0);
+    setPage(1);
     setRoleFilter(value);
   }
 
@@ -193,7 +193,7 @@ export default function AdminUsers() {
           size={size}
           onPageChange={setPage}
           onSizeChange={(s) => {
-            setPage(0);
+            setPage(1);
             setSize(s);
           }}
         />

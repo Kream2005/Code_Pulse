@@ -18,7 +18,7 @@ import { useI18n } from '../../i18n/I18nContext';
 export default function PasswordRequests() {
   const { t } = useI18n();
   const [items, setItems] = useState<DemandeReinitialisationDto[]>([]);
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
@@ -45,7 +45,7 @@ export default function PasswordRequests() {
   useEffect(reload, [page, size, statut, search]);
 
   function onSearchChange(value: string) {
-    setPage(0);
+    setPage(1);
     setSearch(value);
   }
 
@@ -109,7 +109,7 @@ export default function PasswordRequests() {
           <select
             value={statut}
             onChange={(e) => {
-              setPage(0);
+              setPage(1);
               setStatut(e.target.value);
             }}
             className="rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
@@ -203,7 +203,7 @@ export default function PasswordRequests() {
           size={size}
           onPageChange={setPage}
           onSizeChange={(s) => {
-            setPage(0);
+            setPage(1);
             setSize(s);
           }}
         />
