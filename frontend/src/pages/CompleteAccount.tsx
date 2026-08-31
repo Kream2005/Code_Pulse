@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Lock, User } from 'lucide-react';
 import { completeAccount, getSetupInfo } from '../api/authApi';
+import { clearToken } from '../auth';
 import BrandPanel from '../components/BrandPanel';
 import ErrorBanner from '../components/ErrorBanner';
 import FormField from '../components/FormField';
@@ -29,6 +30,10 @@ export default function CompleteAccount() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingInfo, setLoadingInfo] = useState(Boolean(token));
+
+  useEffect(() => {
+    if (token) clearToken();
+  }, [token]);
 
   useEffect(() => {
     if (!token) return;

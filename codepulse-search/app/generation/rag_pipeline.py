@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from sqlalchemy.orm import Session
 
 from app.core.security import CurrentUser
@@ -13,6 +15,8 @@ from app.generation.snippets import (
 )
 from app.retrieval.hybrid_search import hybrid_search
 from app.schemas.assistant import AssistantResponse, Citation
+
+logger = logging.getLogger(__name__)
 
 
 def _citations_from_hits(hits) -> list[Citation]:
@@ -77,13 +81,16 @@ def run_rag(
     context = format_context(context_payload)
 
     if not ollama_reachable():
+        logger.info("Ollama offline — returning passage fallback for: %s", question[:80])
         return AssistantResponse(answer=_passage_fallback(citations), citations=citations)
 
     client = llm or LlmClient()
     prompt = build_rag_prompt(question, context)
     try:
+        logger.info("Calling Ollama for assistant answer: %s", question[:80])
         answer = client.generate(prompt, system=SYSTEM_RAG, temperature=0.2, max_tokens=512)
     except Exception:  # noqa: BLE001 — keep UI free of stack traces
+        logger.exception("Ollama generation failed — using passage fallback")
         return AssistantResponse(answer=_passage_fallback(citations), citations=citations)
 
     return AssistantResponse(answer=answer, citations=citations)

@@ -246,7 +246,7 @@ Le challenge **n’est pas passé dans CodePulse**. CodePulse reçoit un **évé
       "tag": "arrays",
       "duree": 45,
       "codeUrl": "https://example.com/two-sum",
-      "parameter": "{}"
+      "parameter": false
     }
   }
 ]

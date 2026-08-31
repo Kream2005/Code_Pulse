@@ -79,7 +79,7 @@ export default function App() {
         path="/feedback/form"
         element={
           <Shell>
-            <UserRoute>
+            <UserRoute redirectWrongRoleToLogin>
               <FeedbackFormPage />
             </UserRoute>
           </Shell>

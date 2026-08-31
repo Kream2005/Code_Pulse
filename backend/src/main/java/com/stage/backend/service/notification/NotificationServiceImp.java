@@ -211,7 +211,7 @@ public class NotificationServiceImp implements NotificationService {
                     mapper.toNotificationDto(existing.get()),
                     true,
                     ResultatLivraisonEmail.NON_APPLICABLE,
-                    buildActionUrl(utilisateur, codingChallenge),
+                    resolveActionUrl(utilisateur, codingChallenge),
                     "Notification déjà existante pour cet utilisateur et ce challenge — aucun doublon créé"
             );
         }
@@ -227,7 +227,7 @@ public class NotificationServiceImp implements NotificationService {
                         + " et le challenge " + codingChallenge.getTitre(),
                 codingChallenge.getId()
         );
-        String actionUrl = buildActionUrl(utilisateur, codingChallenge);
+        String actionUrl = resolveActionUrl(utilisateur, codingChallenge);
         ResultatLivraisonEmail livraison;
         String message;
         try {
@@ -306,8 +306,7 @@ public class NotificationServiceImp implements NotificationService {
         if (utilisateur == null || challenge == null) {
             return false;
         }
-        refreshSetupTokenIfNeeded(utilisateur);
-        String actionUrl = buildActionUrl(utilisateur, challenge);
+        String actionUrl = resolveActionUrl(utilisateur, challenge);
         try {
             emailSender.sendChallengeRelanceEmail(
                     utilisateur,
@@ -353,6 +352,11 @@ public class NotificationServiceImp implements NotificationService {
         utilisateur.setSetupToken(UUID.randomUUID().toString());
         utilisateur.setSetupTokenExpiresAt(ZonedDateTime.now().plusHours(24));
         utilisateurRepository.save(utilisateur);
+    }
+
+    private String resolveActionUrl(Utilisateur utilisateur, CodingChallenge codingChallenge) {
+        refreshSetupTokenIfNeeded(utilisateur);
+        return buildActionUrl(utilisateur, codingChallenge);
     }
 
     private String buildActionUrl(Utilisateur utilisateur, CodingChallenge codingChallenge) {

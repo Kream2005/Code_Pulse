@@ -1,0 +1,39 @@
+@startuml sequence_feedback
+!theme plain
+skinparam shadowing false
+title Séquence — Activation compte (optionnel) + soumission feedback
+
+actor Candidat as U
+participant "Frontend" as FE
+participant "Spring Boot" as BE
+database "PostgreSQL" as DB
+
+alt compte incomplet
+  U -> FE : complete-account\n(token, password, profil)
+  FE -> BE : POST /auth/complete-account
+  BE -> DB : valider setupToken\nfinaliser compte
+  BE --> FE : JWT
+end
+
+U -> FE : login
+FE -> BE : POST /auth/login
+BE --> FE : JWT
+
+U -> FE : ouvrir formulaire
+FE -> BE : GET /feedbacks/form?challengeId=
+BE -> DB : challenge + questions actives
+BE --> FE : formulaire
+
+U -> FE : soumettre feedback SOUMIS
+FE -> BE : POST /feedbacks/submit
+BE -> DB : valider questions obligatoires\nNOTE / CHOIX
+BE -> DB : sauver Feedback + Reponses
+BE -> DB : Notification → LUE
+BE --> FE : 200 OK
+
+note over BE, DB
+  Après SOUMIS : plus de relance
+  pour ce couple user+challenge
+end note
+
+@enduml

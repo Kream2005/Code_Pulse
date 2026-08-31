@@ -1,0 +1,29 @@
+@startuml sequence_rag
+!theme plain
+skinparam shadowing false
+title Séquence — Recherche hybride / Assistant RAG
+
+actor "Admin / Manager" as A
+participant "Frontend\n/smart-search" as FE
+participant "codepulse-search\n:8090" as SR
+database "PostgreSQL\n+ pgvector" as DB
+participant "MiniLM" as EMB
+participant "Ollama\n(optionnel)" as OLL
+
+A -> FE : question + JWT
+FE -> SR : POST /assistant\n(Bearer JWT)
+SR -> SR : valider JWT RS256\n+ rôles admin
+SR -> SR : analyser requête\n(greeting ? → réponse guide)
+SR -> EMB : embed(query)
+SR -> DB : vector search\n+ keyword/FTS\n(filtres rôle + tag)
+SR -> SR : RRF + collapse\npar source
+alt Ollama joignable
+  SR -> OLL : générer réponse\nsur le contexte cité
+  OLL --> SR : prose FR
+else
+  SR -> SR : fallback passages\n+ citations nettoyées
+end
+SR --> FE : answer + citations
+FE --> A : affichage
+
+@enduml

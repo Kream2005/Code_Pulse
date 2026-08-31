@@ -1,0 +1,21 @@
+@startuml sequence_relance
+!theme plain
+skinparam shadowing false
+title Séquence — Relance automatique des notifications
+
+participant "Scheduler\n/ GET /dev/relance/run" as SCH
+participant "Spring Boot" as BE
+database "PostgreSQL" as DB
+participant "SMTP" as MAIL
+actor Candidat as U
+
+SCH -> BE : relancerNotificationsNonLues()
+BE -> DB : findDueForRelance\n(délai écoulé, max non atteint,\npas de feedback SOUMIS)
+loop pour chaque notification due
+  BE -> DB : rafraîchir setupToken\nsi compte incomplet
+  BE -> MAIL : e-mail « Rappel #N »\n(nouveau lien)
+  BE -> DB : nombreRelances++\ndateDerniereRelance=now
+end
+MAIL --> U : rappel
+
+@enduml
