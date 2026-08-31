@@ -8,7 +8,7 @@ import PageHeader from '../components/PageHeader';
 import Pagination from '../components/Pagination';
 import SearchInput from '../components/SearchInput';
 import Table from '../components/Table';
-import { getUserId } from '../auth';
+import { clearToken, getUserId } from '../auth';
 import {
   getChallengeTags,
   getFeedbackForm,
@@ -84,7 +84,17 @@ export default function FeedbackFormPage() {
           setNote(data.noteGlobale ?? 3);
           setCommentaire(data.commentaire ?? '');
         })
-        .catch((err) => setError(err.response?.data?.message ?? 'Formulaire indisponible.'))
+        .catch((err) => {
+          if (err.response?.status === 403 && challengeId) {
+            clearToken();
+            navigate(
+              `/login?returnUrl=${encodeURIComponent(`/feedback/form?challengeId=${challengeId}`)}`,
+              { replace: true }
+            );
+            return;
+          }
+          setError(err.response?.data?.message ?? 'Formulaire indisponible.');
+        })
         .finally(() => setLoading(false));
       return;
     }
@@ -191,6 +201,14 @@ export default function FeedbackFormPage() {
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number; data?: { message?: string } } })?.response
         ?.status;
+      if (status === 403 && challengeId) {
+        clearToken();
+        navigate(
+          `/login?returnUrl=${encodeURIComponent(`/feedback/form?challengeId=${challengeId}`)}`,
+          { replace: true }
+        );
+        return;
+      }
       const message =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
         'Échec de soumission.';

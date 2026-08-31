@@ -71,6 +71,11 @@ public class FeedbackServiceImp implements FeedbackService {
                 ));
 
         Optional<Feedback> existingOpt = findActiveFeedback(utilisateurId, request.codingChallengeId());
+        assertFeedbackRecipient(
+                utilisateurId,
+                request.codingChallengeId(),
+                existingOpt.isPresent()
+        );
 
         if (existingOpt.isPresent() && isSubmitted(existingOpt.get())) {
             integrationLogService.logEvent(
@@ -393,6 +398,8 @@ public class FeedbackServiceImp implements FeedbackService {
             return buildFormResponse(challenge, questions, existing.get(), true);
         }
 
+        assertFeedbackRecipient(utilisateurId, codingChallengeId, existing.isPresent());
+
         Utilisateur utilisateur = utilisateurRepository.findById(utilisateurId)
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Utilisateur introuvable : id=" + utilisateurId
@@ -441,6 +448,29 @@ public class FeedbackServiceImp implements FeedbackService {
         }
         if (!feedback.getUtilisateur().getId().equals(currentUserId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+        }
+    }
+
+    private void assertFeedbackRecipient(
+            Long utilisateurId,
+            Long codingChallengeId,
+            boolean hasExistingFeedback
+    ) {
+        if (canReadAllFeedbacks()) {
+            return;
+        }
+        if (hasExistingFeedback) {
+            return;
+        }
+        boolean hasNotification = notificationRepository
+                .findByUtilisateurIdAndCodingChallengeId(utilisateurId, codingChallengeId)
+                .filter(notification -> !notification.isSupprime())
+                .isPresent();
+        if (!hasNotification) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Ce formulaire de feedback ne vous est pas destiné"
+            );
         }
     }
 

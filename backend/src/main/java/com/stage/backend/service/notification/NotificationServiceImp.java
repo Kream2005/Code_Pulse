@@ -353,6 +353,10 @@ public class NotificationServiceImp implements NotificationService {
     }
 
     private boolean relancerUne(Notification notification) {
+        var relance = notificationProperties.relance();
+        if (relance == null || !relance.enabled()) {
+            return false;
+        }
         Utilisateur utilisateur = notification.getUtilisateur();
         CodingChallenge challenge = notification.getCodingChallenge();
         if (utilisateur == null || challenge == null) {
