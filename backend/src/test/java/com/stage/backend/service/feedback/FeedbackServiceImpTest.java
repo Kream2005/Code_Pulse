@@ -165,4 +165,20 @@ class FeedbackServiceImpTest {
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("ne vous est pas destiné");
     }
+
+    @Test
+    void getFeedbackForm_withDraftButNoNotification_returns403() {
+        Feedback draft = new Feedback();
+        draft.setStatutFeedback(StatutFeedback.EN_COURS);
+        when(codingChallengeRepository.findById(10L)).thenReturn(Optional.of(challenge));
+        when(questionFeedbackRepository.findBySupprimeFalse()).thenReturn(List.of());
+        when(repository.findByUtilisateurIdAndCodingChallengeIdAndSupprimeFalse(2L, 10L))
+                .thenReturn(Optional.of(draft));
+        when(notificationRepository.findByUtilisateurIdAndCodingChallengeId(2L, 10L))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.getFeedbackForm(10L, 2L))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("ne vous est pas destiné");
+    }
 }

@@ -443,7 +443,7 @@ public class NotificationServiceImp implements NotificationService {
                     + codingChallenge.getId();
         }
         return notificationProperties.frontendBaseUrl()
-                + "/feedback/form?challengeId="
+                + "/feedback/enter?challengeId="
                 + codingChallenge.getId();
     }
 }

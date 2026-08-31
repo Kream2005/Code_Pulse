@@ -19,6 +19,7 @@ import ResetPassword from './pages/ResetPassword';
 import Inbox from './pages/Inbox';
 import MyFeedback from './pages/MyFeedback';
 import FeedbackFormPage from './pages/FeedbackForm';
+import FeedbackFormEntry from './pages/FeedbackFormEntry';
 import FeedbackDetails from './pages/FeedbackDetails';
 import Profile from './pages/Profile';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -50,6 +51,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/complete-account" element={<CompleteAccount />} />
+      <Route path="/feedback/enter" element={<FeedbackFormEntry />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/register" element={<Navigate to="/login" replace />} />

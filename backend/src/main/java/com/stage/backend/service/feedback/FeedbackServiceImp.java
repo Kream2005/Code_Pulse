@@ -71,11 +71,7 @@ public class FeedbackServiceImp implements FeedbackService {
                 ));
 
         Optional<Feedback> existingOpt = findActiveFeedback(utilisateurId, request.codingChallengeId());
-        assertFeedbackRecipient(
-                utilisateurId,
-                request.codingChallengeId(),
-                existingOpt.isPresent()
-        );
+        assertFeedbackRecipient(utilisateurId, request.codingChallengeId());
 
         if (existingOpt.isPresent() && isSubmitted(existingOpt.get())) {
             integrationLogService.logEvent(
@@ -398,7 +394,7 @@ public class FeedbackServiceImp implements FeedbackService {
             return buildFormResponse(challenge, questions, existing.get(), true);
         }
 
-        assertFeedbackRecipient(utilisateurId, codingChallengeId, existing.isPresent());
+        assertFeedbackRecipient(utilisateurId, codingChallengeId);
 
         Utilisateur utilisateur = utilisateurRepository.findById(utilisateurId)
                 .orElseThrow(() -> new EntityNotFoundException(
@@ -451,15 +447,8 @@ public class FeedbackServiceImp implements FeedbackService {
         }
     }
 
-    private void assertFeedbackRecipient(
-            Long utilisateurId,
-            Long codingChallengeId,
-            boolean hasExistingFeedback
-    ) {
+    private void assertFeedbackRecipient(Long utilisateurId, Long codingChallengeId) {
         if (canReadAllFeedbacks()) {
-            return;
-        }
-        if (hasExistingFeedback) {
             return;
         }
         boolean hasNotification = notificationRepository
