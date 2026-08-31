@@ -76,9 +76,12 @@ export default function FeedbackFormPage() {
       setLoading(true);
       getFeedbackForm(challengeId)
         .then((data) => {
+          const answerMap = new Map((data.reponses ?? []).map((r) => [r.questionId, r.valeur]));
           setFormData(data);
-          setAnswers(data.questions.map(() => ''));
+          setAnswers(data.questions.map((q) => answerMap.get(q.id) ?? ''));
           setFieldErrors(data.questions.map(() => ''));
+          setNote(data.noteGlobale ?? 3);
+          setCommentaire(data.commentaire ?? '');
         })
         .catch((err) => setError(err.response?.data?.message ?? 'Formulaire indisponible.'))
         .finally(() => setLoading(false));

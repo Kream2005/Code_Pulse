@@ -8,5 +8,9 @@ import java.util.List;
 public record FeedbackFormResponse(
         CodingChallengeDto challenge,
         List<QuestionFeedbackResponse> questions,
-        boolean alreadySubmitted
+        boolean alreadySubmitted,
+        Long feedbackId,
+        Float noteGlobale,
+        String commentaire,
+        List<FeedbackDraftAnswerResponse> reponses
 ) {}

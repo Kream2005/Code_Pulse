@@ -65,6 +65,10 @@ export interface FeedbackFormResponse {
   challenge: CodingChallengeDto;
   questions: QuestionFeedback[];
   alreadySubmitted: boolean;
+  feedbackId?: number | null;
+  noteGlobale?: number | null;
+  commentaire?: string | null;
+  reponses?: { questionId: number; valeur: string }[];
 }
 
 export interface SubmitFeedbackRequest {

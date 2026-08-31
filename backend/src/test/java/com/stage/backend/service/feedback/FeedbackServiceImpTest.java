@@ -80,8 +80,11 @@ class FeedbackServiceImpTest {
     }
 
     @Test
-    void submitFeedback_duplicate_returns409() {
-        when(repository.existsByUtilisateurIdAndCodingChallengeId(1L, 10L)).thenReturn(true);
+    void submitFeedback_duplicateSubmitted_returns400() {
+        Feedback submitted = new Feedback();
+        submitted.setStatutFeedback(StatutFeedback.SOUMIS);
+        when(repository.findByUtilisateurIdAndCodingChallengeIdAndSupprimeFalse(1L, 10L))
+                .thenReturn(Optional.of(submitted));
         when(codingChallengeRepository.findById(10L)).thenReturn(Optional.of(challenge));
 
         SubmitFeedbackRequest request = new SubmitFeedbackRequest(
@@ -94,7 +97,9 @@ class FeedbackServiceImpTest {
 
     @Test
     void submitFeedback_missingMandatoryAnswer_returns400() {
-        when(repository.existsByUtilisateurIdAndCodingChallengeId(1L, 10L)).thenReturn(false);
+        when(repository.findByUtilisateurIdAndCodingChallengeIdAndSupprimeFalse(1L, 10L))
+                .thenReturn(Optional.empty());
+        when(repository.existsByCodingChallengeId(10L)).thenReturn(false);
         when(codingChallengeRepository.findById(10L)).thenReturn(Optional.of(challenge));
         when(questionFeedbackRepository.findByObligatoire(true)).thenReturn(List.of(mandatoryQuestion));
 
@@ -108,7 +113,9 @@ class FeedbackServiceImpTest {
 
     @Test
     void submitFeedback_happyPath_marksNotificationAsLue() {
-        when(repository.existsByUtilisateurIdAndCodingChallengeId(1L, 10L)).thenReturn(false);
+        when(repository.findByUtilisateurIdAndCodingChallengeIdAndSupprimeFalse(1L, 10L))
+                .thenReturn(Optional.empty());
+        when(repository.existsByCodingChallengeId(10L)).thenReturn(false);
         when(codingChallengeRepository.findById(10L)).thenReturn(Optional.of(challenge));
         when(utilisateurRepository.findById(1L)).thenReturn(Optional.of(user));
         when(questionFeedbackRepository.findByObligatoire(true)).thenReturn(List.of(mandatoryQuestion));
@@ -120,6 +127,7 @@ class FeedbackServiceImpTest {
         saved.setCodingChallenge(challenge);
         saved.setStatutFeedback(StatutFeedback.SOUMIS);
         when(repository.save(any(Feedback.class))).thenReturn(saved);
+        when(reponseFeedbackRepository.findByFeedbackId(any())).thenReturn(List.of());
 
         Notification notification = new Notification();
         notification.setStatut(StatutNotification.EN_ATTENTE);

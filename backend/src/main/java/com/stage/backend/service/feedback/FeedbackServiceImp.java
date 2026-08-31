@@ -1,5 +1,6 @@
 package com.stage.backend.service.feedback;
 import com.stage.backend.dto.common.ErreurValidation;
+import com.stage.backend.dto.feedback.FeedbackDraftAnswerResponse;
 import com.stage.backend.dto.feedback.FeedbackDetailsResponse;
 import com.stage.backend.dto.feedback.FeedbackFormResponse;
 import com.stage.backend.dto.feedback.FeedbackResponse;
@@ -41,6 +42,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.Optional;
 import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
@@ -63,8 +65,28 @@ public class FeedbackServiceImp implements FeedbackService {
     public FeedbackResponse submitFeedback(SubmitFeedbackRequest request, Long utilisateurId) {
         List<ErreurValidation> erreurs = new ArrayList<>();
 
-        if (repository.existsByUtilisateurIdAndCodingChallengeId(utilisateurId, request.codingChallengeId())
-                || repository.existsByCodingChallengeId(request.codingChallengeId())) {
+        CodingChallenge challenge = codingChallengeRepository.findById(request.codingChallengeId())
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Coding challenge introuvable : id=" + request.codingChallengeId()
+                ));
+
+        Optional<Feedback> existingOpt = findActiveFeedback(utilisateurId, request.codingChallengeId());
+
+        if (existingOpt.isPresent() && isSubmitted(existingOpt.get())) {
+            integrationLogService.logEvent(
+                    TypeLog.FEEDBACK,
+                    StatutLog.WARNING,
+                    "Tentative de doublon feedback pour le challenge " + request.codingChallengeId(),
+                    request.codingChallengeId()
+            );
+            erreurs.add(new ErreurValidation(
+                    "codingChallengeId",
+                    null,
+                    "DOUBLON",
+                    "Un feedback a déjà été soumis pour ce coding challenge"
+            ));
+        } else if (existingOpt.isEmpty()
+                && repository.existsByCodingChallengeId(request.codingChallengeId())) {
             integrationLogService.logEvent(
                     TypeLog.FEEDBACK,
                     StatutLog.WARNING,
@@ -78,11 +100,6 @@ public class FeedbackServiceImp implements FeedbackService {
                     "Un feedback a déjà été soumis pour ce coding challenge"
             ));
         }
-
-        CodingChallenge challenge = codingChallengeRepository.findById(request.codingChallengeId())
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Coding challenge introuvable : id=" + request.codingChallengeId()
-                ));
 
         if (challenge.isSupprime()) {
             erreurs.add(new ErreurValidation(
@@ -109,51 +126,127 @@ public class FeedbackServiceImp implements FeedbackService {
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Utilisateur introuvable : id=" + utilisateurId
                 ));
+
+        Feedback feedback = existingOpt.orElseGet(Feedback::new);
+        if (feedback.getId() == null) {
+            feedback.setUtilisateur(utilisateur);
+            feedback.setCodingChallenge(challenge);
+            feedback.setChallengeTitre(challenge.getTitre());
+            feedback.setChallengeTag(challenge.getTag());
+            feedback.setChallengeDescription(challenge.getDescription());
+            feedback.setCreatedAt(ZonedDateTime.now());
+        }
+        feedback.setNoteGlobale(request.noteGlobale());
+        feedback.setCommentaire(request.commentaire());
+        feedback.setStatutFeedback(request.statut());
+        Feedback saved = repository.save(feedback);
+
+        upsertReponses(saved.getId(), request.reponses());
+        markNotificationRead(utilisateurId, challenge.getId());
+
+        integrationLogService.logEvent(
+                TypeLog.FEEDBACK,
+                StatutLog.SUCCES,
+                "Feedback "
+                        + request.statut()
+                        + " by user "
+                        + utilisateurId
+                        + " for challenge "
+                        + request.codingChallengeId(),
+                request.codingChallengeId()
+        );
+        log.info("Feedback saved — user={} challenge={} statut={}",
+                utilisateurId, request.codingChallengeId(), request.statut());
+        return mapper.toResponseDto(saved);
+    }
+
+    private void upsertReponses(Long feedbackId, List<SubmitFeedbackRequest.AnswerRequest> reponses) {
+        if (reponses == null) {
+            return;
+        }
+        List<ReponseFeedback> existing = reponseFeedbackRepository.findByFeedbackId(feedbackId);
+        if (!existing.isEmpty()) {
+            reponseFeedbackRepository.deleteAll(existing);
+        }
+        for (SubmitFeedbackRequest.AnswerRequest answerReq : reponses) {
+            String valeur = answerReq.valeur();
+            if (valeur == null || valeur.isBlank()) {
+                continue;
+            }
+            QuestionFeedback question = questionFeedbackRepository.findById(answerReq.questionId())
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            "Question not found: " + answerReq.questionId()
+                    ));
+            ReponseFeedback reponse = new ReponseFeedback();
+            if (question.getType() == TypeQuestion.NOTE) {
+                valeur = normalizeNoteValue(valeur);
+            }
+            reponse.setValeur(valeur);
+            reponse.setQuestionFeedback(question);
+            reponse.setFeedbackId(feedbackId);
+            reponseFeedbackRepository.save(reponse);
+        }
+    }
+
+    private Optional<Feedback> findActiveFeedback(Long utilisateurId, Long codingChallengeId) {
+        return repository.findByUtilisateurIdAndCodingChallengeIdAndSupprimeFalse(
+                utilisateurId,
+                codingChallengeId
+        );
+    }
+
+    private static boolean isSubmitted(Feedback feedback) {
+        return feedback.getStatutFeedback() == StatutFeedback.SOUMIS;
+    }
+
+    private void markNotificationRead(Long utilisateurId, Long codingChallengeId) {
+        notificationRepository
+                .findByUtilisateurIdAndCodingChallengeId(utilisateurId, codingChallengeId)
+                .ifPresent(notification -> {
+                    if (notification.getStatut() != StatutNotification.LUE) {
+                        notification.setStatut(StatutNotification.LUE);
+                        notificationRepository.save(notification);
+                    }
+                });
+    }
+
+    private Feedback createDraftFeedback(Utilisateur utilisateur, CodingChallenge challenge) {
         Feedback feedback = new Feedback();
         feedback.setUtilisateur(utilisateur);
         feedback.setCodingChallenge(challenge);
         feedback.setChallengeTitre(challenge.getTitre());
         feedback.setChallengeTag(challenge.getTag());
         feedback.setChallengeDescription(challenge.getDescription());
-        feedback.setNoteGlobale(request.noteGlobale());
-        feedback.setCommentaire(request.commentaire());
-        feedback.setStatutFeedback(request.statut());
+        feedback.setStatutFeedback(StatutFeedback.EN_COURS);
         feedback.setCreatedAt(ZonedDateTime.now());
-        Feedback saved = repository.save(feedback);
-        if (request.reponses() != null) {
-            for (SubmitFeedbackRequest.AnswerRequest answerReq : request.reponses()) {
-                QuestionFeedback question = questionFeedbackRepository.findById(answerReq.questionId())
-                        .orElseThrow(() -> new EntityNotFoundException(
-                                "Question not found: " + answerReq.questionId()
-                        ));
-                ReponseFeedback reponse = new ReponseFeedback();
-                String valeur = answerReq.valeur();
-                if (question.getType() == TypeQuestion.NOTE && valeur != null && !valeur.isBlank()) {
-                    valeur = normalizeNoteValue(valeur);
-                }
-                reponse.setValeur(valeur);
-                reponse.setQuestionFeedback(question);
-                reponse.setFeedbackId(saved.getId());
-                reponseFeedbackRepository.save(reponse);
-            }
-        }
-        if (request.statut() == StatutFeedback.SOUMIS) {
-            notificationRepository
-                    .findByUtilisateurIdAndCodingChallengeId(utilisateurId, challenge.getId())
-                    .ifPresent(n -> {
-                        n.setStatut(StatutNotification.LUE);
-                        notificationRepository.save(n);
-                    });
-        }
-        integrationLogService.logEvent(
-                TypeLog.FEEDBACK,
-                StatutLog.SUCCES,
-                "Feedback submitted by user " + utilisateurId + " for challenge " + request.codingChallengeId(),
-                request.codingChallengeId()
+        return repository.save(feedback);
+    }
+
+    private FeedbackFormResponse buildFormResponse(
+            CodingChallenge challenge,
+            List<QuestionFeedback> questions,
+            Feedback feedback,
+            boolean alreadySubmitted
+    ) {
+        List<FeedbackDraftAnswerResponse> draftAnswers = feedback == null
+                ? List.of()
+                : reponseFeedbackRepository.findByFeedbackId(feedback.getId()).stream()
+                        .map(r -> new FeedbackDraftAnswerResponse(
+                                r.getQuestionFeedback().getId(),
+                                r.getValeur()
+                        ))
+                        .toList();
+        return new FeedbackFormResponse(
+                codingChallengeMapper.toCodingChallengeDto(challenge),
+                questions.stream()
+                        .map(questionFeedbackMapper::toQuestionFeedbackResponse)
+                        .toList(),
+                alreadySubmitted,
+                feedback == null ? null : feedback.getId(),
+                feedback == null ? null : feedback.getNoteGlobale(),
+                feedback == null ? null : feedback.getCommentaire(),
+                draftAnswers
         );
-        log.info("Feedback saved — user={} challenge={} statut={}",
-                utilisateurId, request.codingChallengeId(), request.statut());
-        return mapper.toResponseDto(saved);
     }
 
     private void collecterErreursQuestionsObligatoires(List<ErreurValidation> erreurs, SubmitFeedbackRequest request) {
@@ -284,7 +377,6 @@ public class FeedbackServiceImp implements FeedbackService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public FeedbackFormResponse getFeedbackForm(Long codingChallengeId, Long utilisateurId) {
         CodingChallenge challenge = codingChallengeRepository.findById(codingChallengeId)
                 .orElseThrow(() -> new EntityNotFoundException(
@@ -293,14 +385,27 @@ public class FeedbackServiceImp implements FeedbackService {
         if (challenge.isSupprime() && !canReadAllFeedbacks()) {
             throw new ResponseStatusException(HttpStatus.GONE, "This coding challenge has been archived");
         }
-        return new FeedbackFormResponse(
-                codingChallengeMapper.toCodingChallengeDto(challenge),
-                questionFeedbackRepository.findBySupprimeFalse().stream()
-                        .map(questionFeedbackMapper::toQuestionFeedbackResponse)
-                        .toList(),
-                repository.existsByUtilisateurIdAndCodingChallengeId(utilisateurId, codingChallengeId)
-                        || repository.existsByCodingChallengeId(codingChallengeId)
+
+        List<QuestionFeedback> questions = questionFeedbackRepository.findBySupprimeFalse();
+        Optional<Feedback> existing = findActiveFeedback(utilisateurId, codingChallengeId);
+
+        if (existing.isPresent() && isSubmitted(existing.get())) {
+            return buildFormResponse(challenge, questions, existing.get(), true);
+        }
+
+        Utilisateur utilisateur = utilisateurRepository.findById(utilisateurId)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Utilisateur introuvable : id=" + utilisateurId
+                ));
+        Feedback draft = existing.orElseGet(() -> createDraftFeedback(utilisateur, challenge));
+        markNotificationRead(utilisateurId, codingChallengeId);
+        integrationLogService.logEvent(
+                TypeLog.FEEDBACK,
+                StatutLog.INFO,
+                "Brouillon feedback ouvert — user=" + utilisateurId + " challenge=" + codingChallengeId,
+                codingChallengeId
         );
+        return buildFormResponse(challenge, questions, draft, false);
     }
 
     @Override
