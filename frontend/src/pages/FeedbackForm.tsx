@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Card from '../components/Card';
 import ErrorBanner from '../components/ErrorBanner';
+import FeedbackRowAction from '../components/FeedbackRowAction';
 import FilterSelect from '../components/FilterSelect';
 import PageHeader from '../components/PageHeader';
 import Pagination from '../components/Pagination';
@@ -304,13 +305,11 @@ export default function FeedbackFormPage() {
                 </td>
                 <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{n.challengeTag ?? '—'}</td>
                 <td className="px-4 py-3">
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/feedback/form?challengeId=${n.codingChallengeId}`)}
-                    className="rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-brand-dark"
-                  >
-                    {t('feedbackForm.fill')}
-                  </button>
+                  <FeedbackRowAction
+                    feedbackId={n.feedbackId}
+                    feedbackStatut={n.feedbackStatut}
+                    codingChallengeId={n.codingChallengeId}
+                  />
                 </td>
               </tr>
             ))}

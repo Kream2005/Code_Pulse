@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import Card from '../components/Card';
 import FilterSelect from '../components/FilterSelect';
 import PageHeader from '../components/PageHeader';
@@ -8,6 +7,7 @@ import SearchInput from '../components/SearchInput';
 import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
 import Table from '../components/Table';
+import FeedbackRowAction from '../components/FeedbackRowAction';
 import { getUserId } from '../auth';
 import {
   getChallengeTags,
@@ -174,13 +174,14 @@ export default function Inbox({ admin = false }: { admin?: boolean }) {
               </td>
               <td className="px-4 py-3">
                 <div className="flex flex-wrap gap-2">
-                  <Link
-                    to={`/feedback/form?challengeId=${n.codingChallengeId}`}
-                    className="inline-flex items-center rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-dark"
-                  >
-                    {t('common.feedback')}
-                  </Link>
-                  {!admin && n.statut !== 'LUE' && (
+                  <FeedbackRowAction
+                    feedbackId={n.feedbackId}
+                    feedbackStatut={n.feedbackStatut}
+                    codingChallengeId={n.codingChallengeId}
+                    variant="inbox"
+                    admin={admin}
+                  />
+                  {!admin && n.statut !== 'LUE' && n.feedbackStatut !== 'SOUMIS' && (
                     <button
                       type="button"
                       onClick={() => markRead(n)}

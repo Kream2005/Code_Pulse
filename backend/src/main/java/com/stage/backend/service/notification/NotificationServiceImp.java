@@ -8,6 +8,7 @@ import com.stage.backend.dto.notification.NotificationEnvoiResponse;
 import com.stage.backend.dto.notification.NotificationStatutUpdateResponse;
 import com.stage.backend.email.NotificationEmailSender;
 import com.stage.backend.entity.CodingChallenge;
+import com.stage.backend.entity.Feedback;
 import com.stage.backend.entity.Notification;
 import com.stage.backend.entity.Utilisateur;
 import com.stage.backend.enums.ResultatLivraisonEmail;
@@ -17,6 +18,7 @@ import com.stage.backend.enums.StatutNotification;
 import com.stage.backend.enums.TypeLog;
 import com.stage.backend.mapper.NotificationMapper;
 import com.stage.backend.repository.CodingChallengeRepository;
+import com.stage.backend.repository.FeedbackRepository;
 import com.stage.backend.repository.NotificationRepository;
 import com.stage.backend.repository.UtilisateurRepository;
 import com.stage.backend.service.integrationlog.IntegrationLogService;
@@ -43,6 +45,7 @@ public class NotificationServiceImp implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final UtilisateurRepository utilisateurRepository;
     private final CodingChallengeRepository codingChallengeRepository;
+    private final FeedbackRepository feedbackRepository;
     private final NotificationMapper mapper;
     private final NotificationEmailSender emailSender;
     private final NotificationProperties notificationProperties;
@@ -75,7 +78,7 @@ public class NotificationServiceImp implements NotificationService {
                         )
                 );
 
-        return mapper.toNotificationDto(notification);
+        return enrichWithFeedback(mapper.toNotificationDto(notification));
     }
 
     @Override
@@ -84,6 +87,7 @@ public class NotificationServiceImp implements NotificationService {
         return notificationRepository.findByUtilisateurId(utilisateurId)
                 .stream()
                 .map(mapper::toNotificationDto)
+                .map(this::enrichWithFeedback)
                 .toList();
     }
 
@@ -92,7 +96,8 @@ public class NotificationServiceImp implements NotificationService {
     public Page<NotificationDto> getNotificationsByUtilisateurPage(Long utilisateurId, int page, int size) {
         return notificationRepository
                 .findByUtilisateurIdAndSupprimeFalse(utilisateurId, PageRequest.of(page, size))
-                .map(mapper::toNotificationDto);
+                .map(mapper::toNotificationDto)
+                .map(this::enrichWithFeedback);
     }
 
     @Override
@@ -104,7 +109,8 @@ public class NotificationServiceImp implements NotificationService {
         String normalizedTag = tag == null ? "" : tag.trim();
         return notificationRepository
                 .searchByUtilisateur(utilisateurId, normalized, statut, normalizedTag, PageRequest.of(page, size))
-                .map(mapper::toNotificationDto);
+                .map(mapper::toNotificationDto)
+                .map(this::enrichWithFeedback);
     }
 
     @Override
@@ -113,6 +119,7 @@ public class NotificationServiceImp implements NotificationService {
         return notificationRepository.findAllWithDetails()
                 .stream()
                 .map(mapper::toNotificationDto)
+                .map(this::enrichWithFeedback)
                 .toList();
     }
 
@@ -120,7 +127,8 @@ public class NotificationServiceImp implements NotificationService {
     @Transactional(readOnly = true)
     public Page<NotificationDto> getAllNotificationsPage(int page, int size) {
         return notificationRepository.findAllBy(PageRequest.of(page, size))
-                .map(mapper::toNotificationDto);
+                .map(mapper::toNotificationDto)
+                .map(this::enrichWithFeedback);
     }
 
     @Override
@@ -129,6 +137,7 @@ public class NotificationServiceImp implements NotificationService {
         return notificationRepository.findByStatut(statut)
                 .stream()
                 .map(mapper::toNotificationDto)
+                .map(this::enrichWithFeedback)
                 .toList();
     }
 
@@ -136,7 +145,8 @@ public class NotificationServiceImp implements NotificationService {
     @Transactional(readOnly = true)
     public Page<NotificationDto> getNotificationsByStatutPage(StatutNotification statut, int page, int size) {
         return notificationRepository.findByStatut(statut, PageRequest.of(page, size))
-                .map(mapper::toNotificationDto);
+                .map(mapper::toNotificationDto)
+                .map(this::enrichWithFeedback);
     }
 
     @Override
@@ -147,7 +157,43 @@ public class NotificationServiceImp implements NotificationService {
         String normalized = keyword == null ? "" : keyword.trim();
         String normalizedTag = tag == null ? "" : tag.trim();
         return notificationRepository.search(normalized, statut, normalizedTag, PageRequest.of(page, size))
-                .map(mapper::toNotificationDto);
+                .map(mapper::toNotificationDto)
+                .map(this::enrichWithFeedback);
+    }
+
+    private NotificationDto enrichWithFeedback(NotificationDto dto) {
+        if (dto.utilisateurId() == null || dto.codingChallengeId() == null) {
+            return withFeedbackFields(dto, null, null);
+        }
+        Optional<Feedback> feedback = feedbackRepository.findByUtilisateurIdAndCodingChallengeIdAndSupprimeFalse(
+                dto.utilisateurId(),
+                dto.codingChallengeId()
+        );
+        return feedback
+                .map(f -> withFeedbackFields(dto, f.getId(), f.getStatutFeedback()))
+                .orElseGet(() -> withFeedbackFields(dto, null, null));
+    }
+
+    private static NotificationDto withFeedbackFields(
+            NotificationDto dto,
+            Long feedbackId,
+            StatutFeedback feedbackStatut
+    ) {
+        return new NotificationDto(
+                dto.id(),
+                dto.dateEnvoi(),
+                dto.dateDerniereRelance(),
+                dto.nombreRelances(),
+                dto.statut(),
+                dto.utilisateurId(),
+                dto.codingChallengeId(),
+                dto.challengeTitre(),
+                dto.challengeTag(),
+                dto.challengeDuree(),
+                dto.challengeDescription(),
+                feedbackId,
+                feedbackStatut
+        );
     }
 
     @Override
@@ -208,7 +254,7 @@ public class NotificationServiceImp implements NotificationService {
                     codingChallenge.getId()
             );
             return new NotificationCreationResult(
-                    mapper.toNotificationDto(existing.get()),
+                    enrichWithFeedback(mapper.toNotificationDto(existing.get())),
                     true,
                     ResultatLivraisonEmail.NON_APPLICABLE,
                     resolveActionUrl(utilisateur, codingChallenge),
@@ -261,7 +307,7 @@ public class NotificationServiceImp implements NotificationService {
             );
         }
         return new NotificationCreationResult(
-                mapper.toNotificationDto(saved),
+                enrichWithFeedback(mapper.toNotificationDto(saved)),
                 false,
                 livraison,
                 actionUrl,

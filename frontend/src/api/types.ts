@@ -39,6 +39,8 @@ export interface NotificationDto {
   challengeTag?: string | null;
   challengeDuree?: number | null;
   challengeDescription?: string | null;
+  feedbackId?: number | null;
+  feedbackStatut?: string | null;
 }
 
 export interface CodingChallengeDto {

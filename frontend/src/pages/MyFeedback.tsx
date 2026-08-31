@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import Card from '../components/Card';
+import FeedbackRowAction from '../components/FeedbackRowAction';
 import FilterSelect from '../components/FilterSelect';
 import PageHeader from '../components/PageHeader';
 import Pagination from '../components/Pagination';
@@ -127,21 +127,11 @@ export default function MyFeedback() {
                 {f.createdAt ? new Date(f.createdAt).toLocaleDateString() : '—'}
               </td>
               <td className="px-4 py-3">
-                {f.statut === 'SOUMIS' ? (
-                  <Link
-                    to={`/feedback/${f.id}`}
-                    className="text-xs font-semibold text-brand hover:text-brand-dark"
-                  >
-                    {t('common.view')}
-                  </Link>
-                ) : (
-                  <Link
-                    to={`/feedback/form?challengeId=${f.codingChallengeId}`}
-                    className="text-xs font-semibold text-brand hover:text-brand-dark"
-                  >
-                    {t('feedbackForm.fill')}
-                  </Link>
-                )}
+                <FeedbackRowAction
+                  feedbackId={f.id}
+                  feedbackStatut={f.statut}
+                  codingChallengeId={f.codingChallengeId}
+                />
               </td>
             </tr>
           ))}
