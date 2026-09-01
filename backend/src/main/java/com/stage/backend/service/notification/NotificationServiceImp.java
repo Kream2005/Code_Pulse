@@ -8,6 +8,7 @@ import com.stage.backend.dto.notification.NotificationEnvoiResponse;
 import com.stage.backend.dto.notification.NotificationStatutUpdateResponse;
 import com.stage.backend.email.NotificationEmailSender;
 import com.stage.backend.entity.CodingChallenge;
+import com.stage.backend.entity.Feedback;
 import com.stage.backend.entity.Notification;
 import com.stage.backend.entity.Utilisateur;
 import com.stage.backend.enums.ResultatLivraisonEmail;
@@ -17,9 +18,11 @@ import com.stage.backend.enums.StatutNotification;
 import com.stage.backend.enums.TypeLog;
 import com.stage.backend.mapper.NotificationMapper;
 import com.stage.backend.repository.CodingChallengeRepository;
+import com.stage.backend.repository.FeedbackRepository;
 import com.stage.backend.repository.NotificationRepository;
 import com.stage.backend.repository.UtilisateurRepository;
 import com.stage.backend.service.integrationlog.IntegrationLogService;
+import com.stage.backend.util.SetupTokenConstants;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +46,7 @@ public class NotificationServiceImp implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final UtilisateurRepository utilisateurRepository;
     private final CodingChallengeRepository codingChallengeRepository;
+    private final FeedbackRepository feedbackRepository;
     private final NotificationMapper mapper;
     private final NotificationEmailSender emailSender;
     private final NotificationProperties notificationProperties;
@@ -75,7 +79,7 @@ public class NotificationServiceImp implements NotificationService {
                         )
                 );
 
-        return mapper.toNotificationDto(notification);
+        return enrichWithFeedback(mapper.toNotificationDto(notification));
     }
 
     @Override
@@ -84,6 +88,7 @@ public class NotificationServiceImp implements NotificationService {
         return notificationRepository.findByUtilisateurId(utilisateurId)
                 .stream()
                 .map(mapper::toNotificationDto)
+                .map(this::enrichWithFeedback)
                 .toList();
     }
 
@@ -92,7 +97,8 @@ public class NotificationServiceImp implements NotificationService {
     public Page<NotificationDto> getNotificationsByUtilisateurPage(Long utilisateurId, int page, int size) {
         return notificationRepository
                 .findByUtilisateurIdAndSupprimeFalse(utilisateurId, PageRequest.of(page, size))
-                .map(mapper::toNotificationDto);
+                .map(mapper::toNotificationDto)
+                .map(this::enrichWithFeedback);
     }
 
     @Override
@@ -104,7 +110,8 @@ public class NotificationServiceImp implements NotificationService {
         String normalizedTag = tag == null ? "" : tag.trim();
         return notificationRepository
                 .searchByUtilisateur(utilisateurId, normalized, statut, normalizedTag, PageRequest.of(page, size))
-                .map(mapper::toNotificationDto);
+                .map(mapper::toNotificationDto)
+                .map(this::enrichWithFeedback);
     }
 
     @Override
@@ -113,6 +120,7 @@ public class NotificationServiceImp implements NotificationService {
         return notificationRepository.findAllWithDetails()
                 .stream()
                 .map(mapper::toNotificationDto)
+                .map(this::enrichWithFeedback)
                 .toList();
     }
 
@@ -120,7 +128,8 @@ public class NotificationServiceImp implements NotificationService {
     @Transactional(readOnly = true)
     public Page<NotificationDto> getAllNotificationsPage(int page, int size) {
         return notificationRepository.findAllBy(PageRequest.of(page, size))
-                .map(mapper::toNotificationDto);
+                .map(mapper::toNotificationDto)
+                .map(this::enrichWithFeedback);
     }
 
     @Override
@@ -129,6 +138,7 @@ public class NotificationServiceImp implements NotificationService {
         return notificationRepository.findByStatut(statut)
                 .stream()
                 .map(mapper::toNotificationDto)
+                .map(this::enrichWithFeedback)
                 .toList();
     }
 
@@ -136,7 +146,8 @@ public class NotificationServiceImp implements NotificationService {
     @Transactional(readOnly = true)
     public Page<NotificationDto> getNotificationsByStatutPage(StatutNotification statut, int page, int size) {
         return notificationRepository.findByStatut(statut, PageRequest.of(page, size))
-                .map(mapper::toNotificationDto);
+                .map(mapper::toNotificationDto)
+                .map(this::enrichWithFeedback);
     }
 
     @Override
@@ -147,7 +158,43 @@ public class NotificationServiceImp implements NotificationService {
         String normalized = keyword == null ? "" : keyword.trim();
         String normalizedTag = tag == null ? "" : tag.trim();
         return notificationRepository.search(normalized, statut, normalizedTag, PageRequest.of(page, size))
-                .map(mapper::toNotificationDto);
+                .map(mapper::toNotificationDto)
+                .map(this::enrichWithFeedback);
+    }
+
+    private NotificationDto enrichWithFeedback(NotificationDto dto) {
+        if (dto.utilisateurId() == null || dto.codingChallengeId() == null) {
+            return withFeedbackFields(dto, null, null);
+        }
+        Optional<Feedback> feedback = feedbackRepository.findByUtilisateurIdAndCodingChallengeIdAndSupprimeFalse(
+                dto.utilisateurId(),
+                dto.codingChallengeId()
+        );
+        return feedback
+                .map(f -> withFeedbackFields(dto, f.getId(), f.getStatutFeedback()))
+                .orElseGet(() -> withFeedbackFields(dto, null, null));
+    }
+
+    private static NotificationDto withFeedbackFields(
+            NotificationDto dto,
+            Long feedbackId,
+            StatutFeedback feedbackStatut
+    ) {
+        return new NotificationDto(
+                dto.id(),
+                dto.dateEnvoi(),
+                dto.dateDerniereRelance(),
+                dto.nombreRelances(),
+                dto.statut(),
+                dto.utilisateurId(),
+                dto.codingChallengeId(),
+                dto.challengeTitre(),
+                dto.challengeTag(),
+                dto.challengeDuree(),
+                dto.challengeDescription(),
+                feedbackId,
+                feedbackStatut
+        );
     }
 
     @Override
@@ -208,10 +255,10 @@ public class NotificationServiceImp implements NotificationService {
                     codingChallenge.getId()
             );
             return new NotificationCreationResult(
-                    mapper.toNotificationDto(existing.get()),
+                    enrichWithFeedback(mapper.toNotificationDto(existing.get())),
                     true,
                     ResultatLivraisonEmail.NON_APPLICABLE,
-                    buildActionUrl(utilisateur, codingChallenge),
+                    resolveActionUrl(utilisateur, codingChallenge),
                     "Notification déjà existante pour cet utilisateur et ce challenge — aucun doublon créé"
             );
         }
@@ -227,7 +274,7 @@ public class NotificationServiceImp implements NotificationService {
                         + " et le challenge " + codingChallenge.getTitre(),
                 codingChallenge.getId()
         );
-        String actionUrl = buildActionUrl(utilisateur, codingChallenge);
+        String actionUrl = resolveActionUrl(utilisateur, codingChallenge);
         ResultatLivraisonEmail livraison;
         String message;
         try {
@@ -261,7 +308,7 @@ public class NotificationServiceImp implements NotificationService {
             );
         }
         return new NotificationCreationResult(
-                mapper.toNotificationDto(saved),
+                enrichWithFeedback(mapper.toNotificationDto(saved)),
                 false,
                 livraison,
                 actionUrl,
@@ -277,30 +324,45 @@ public class NotificationServiceImp implements NotificationService {
         }
         ZonedDateTime seuil = ZonedDateTime.now().minus(relance.delay());
         List<Notification> due = notificationRepository.findDueForRelance(
-                Set.of(StatutNotification.EN_ATTENTE, StatutNotification.ENVOYEE, StatutNotification.ECHEC),
+                Set.of(
+                        StatutNotification.EN_ATTENTE,
+                        StatutNotification.ENVOYEE,
+                        StatutNotification.ECHEC,
+                        StatutNotification.LUE
+                ),
                 relance.max(),
                 seuil,
                 StatutFeedback.SOUMIS
         );
+        if (due.isEmpty()) {
+            log.debug(
+                    "Relance cycle: none due (wait {} after send, max {} relances, no submitted feedback)",
+                    relance.delay(),
+                    relance.max()
+            );
+            return 0;
+        }
         int sent = 0;
         for (Notification notification : due) {
             if (relancerUne(notification)) {
                 sent++;
             }
         }
-        if (sent > 0) {
-            log.info("Relance sent for {} unread notification(s)", sent);
-        }
+        log.info("Relance cycle: {} due, {} e-mail(s) sent", due.size(), sent);
         return sent;
     }
 
     private boolean relancerUne(Notification notification) {
+        var relance = notificationProperties.relance();
+        if (relance == null || !relance.enabled()) {
+            return false;
+        }
         Utilisateur utilisateur = notification.getUtilisateur();
         CodingChallenge challenge = notification.getCodingChallenge();
         if (utilisateur == null || challenge == null) {
             return false;
         }
-        refreshSetupTokenIfNeeded(utilisateur);
+        rotateSetupToken(utilisateur);
         String actionUrl = buildActionUrl(utilisateur, challenge);
         try {
             emailSender.sendChallengeRelanceEmail(
@@ -340,13 +402,36 @@ public class NotificationServiceImp implements NotificationService {
         }
     }
 
-    private void refreshSetupTokenIfNeeded(Utilisateur utilisateur) {
+    private void ensureSetupToken(Utilisateur utilisateur) {
+        if (utilisateur.isCompteComplet()) {
+            return;
+        }
+        if (!SetupTokenConstants.isExpiredOrMissing(
+                utilisateur.getSetupToken(),
+                utilisateur.getSetupTokenExpiresAt()
+        )) {
+            utilisateur.setSetupTokenExpiresAt(SetupTokenConstants.expiresAtFromNow());
+            utilisateurRepository.save(utilisateur);
+            return;
+        }
+        utilisateur.setSetupToken(UUID.randomUUID().toString());
+        utilisateur.setSetupTokenExpiresAt(SetupTokenConstants.expiresAtFromNow());
+        utilisateurRepository.save(utilisateur);
+    }
+
+    /** Relance only: invalidate previous setup links and issue a fresh token. */
+    private void rotateSetupToken(Utilisateur utilisateur) {
         if (utilisateur.isCompteComplet()) {
             return;
         }
         utilisateur.setSetupToken(UUID.randomUUID().toString());
-        utilisateur.setSetupTokenExpiresAt(ZonedDateTime.now().plusHours(24));
+        utilisateur.setSetupTokenExpiresAt(SetupTokenConstants.expiresAtFromNow());
         utilisateurRepository.save(utilisateur);
+    }
+
+    private String resolveActionUrl(Utilisateur utilisateur, CodingChallenge codingChallenge) {
+        ensureSetupToken(utilisateur);
+        return buildActionUrl(utilisateur, codingChallenge);
     }
 
     private String buildActionUrl(Utilisateur utilisateur, CodingChallenge codingChallenge) {
@@ -358,7 +443,9 @@ public class NotificationServiceImp implements NotificationService {
                     + codingChallenge.getId();
         }
         return notificationProperties.frontendBaseUrl()
-                + "/feedback/form?challengeId="
-                + codingChallenge.getId();
+                + "/feedback/enter?challengeId="
+                + codingChallenge.getId()
+                + "&recipientId="
+                + utilisateur.getId();
     }
 }

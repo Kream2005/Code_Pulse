@@ -31,7 +31,7 @@ const LOG_STATUSES = ['INFO', 'SUCCES', 'WARNING', 'ERREUR', 'CRITIQUE'];
 export default function AdminLogs() {
   const { t } = useI18n();
   const [items, setItems] = useState<IntegrationLogDto[]>([]);
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
@@ -54,17 +54,17 @@ export default function AdminLogs() {
   }, [page, size, search, typeFilter, statutFilter]);
 
   function onSearchChange(value: string) {
-    setPage(0);
+    setPage(1);
     setSearch(value);
   }
 
   function onTypeFilterChange(value: string) {
-    setPage(0);
+    setPage(1);
     setTypeFilter(value);
   }
 
   function onStatutFilterChange(value: string) {
-    setPage(0);
+    setPage(1);
     setStatutFilter(value);
   }
 
@@ -117,7 +117,7 @@ export default function AdminLogs() {
           size={size}
           onPageChange={setPage}
           onSizeChange={(s) => {
-            setPage(0);
+            setPage(1);
             setSize(s);
           }}
         />

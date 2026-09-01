@@ -23,6 +23,7 @@ import com.stage.backend.mapper.CodingChallengeMapper;
 import com.stage.backend.repository.CodingChallengeRepository;
 import com.stage.backend.repository.NotificationRepository;
 import com.stage.backend.repository.UtilisateurRepository;
+import com.stage.backend.util.SetupTokenConstants;
 import com.stage.backend.service.integrationlog.IntegrationLogService;
 import com.stage.backend.service.notification.NotificationService;
 import jakarta.persistence.EntityNotFoundException;
@@ -470,7 +471,7 @@ public class CodingChallengeServiceImp implements CodingChallengeService {
         user.setCompteComplet(false);
         user.setPassword(null);
         user.setSetupToken(UUID.randomUUID().toString());
-        user.setSetupTokenExpiresAt(ZonedDateTime.now().plusHours(24));
+        user.setSetupTokenExpiresAt(SetupTokenConstants.expiresAtFromNow());
         assignUserName(user, incoming.userName(), incoming.id());
         return new UserResolveOutcome(user, List.of("created"));
     }

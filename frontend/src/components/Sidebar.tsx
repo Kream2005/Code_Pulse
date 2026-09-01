@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Lock,
   MessageSquareText,
+  Search,
   Settings,
   User,
   Users,
@@ -83,6 +84,12 @@ export default function Sidebar() {
             end: true,
             label: t('nav.adminDashboard'),
             icon: <LayoutDashboard className="h-5 w-5 shrink-0" />,
+          },
+          {
+            to: '/admin/smart-search',
+            end: false,
+            label: t('nav.smartSearch'),
+            icon: <Search className="h-5 w-5 shrink-0" />,
           },
           ...(canManageChallenges()
             ? [

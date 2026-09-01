@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Card from '../components/Card';
 import ErrorBanner from '../components/ErrorBanner';
+import FeedbackRowAction from '../components/FeedbackRowAction';
 import FilterSelect from '../components/FilterSelect';
 import PageHeader from '../components/PageHeader';
 import Pagination from '../components/Pagination';
 import SearchInput from '../components/SearchInput';
 import Table from '../components/Table';
-import { getUserId } from '../auth';
+import { clearToken, getUserId } from '../auth';
 import {
   getChallengeTags,
   getFeedbackForm,
@@ -44,6 +45,8 @@ export default function FeedbackFormPage() {
   const navigate = useNavigate();
   const challengeIdParam = params.get('challengeId');
   const challengeId = challengeIdParam ? Number(challengeIdParam) : null;
+  const recipientIdParam = params.get('recipientId');
+  const recipientId = recipientIdParam ? Number(recipientIdParam) : null;
 
   const [formData, setFormData] = useState<FeedbackFormResponse | null>(null);
   const [answers, setAnswers] = useState<string[]>([]);
@@ -55,7 +58,7 @@ export default function FeedbackFormPage() {
   const [saving, setSaving] = useState(false);
 
   const [picker, setPicker] = useState<NotificationDto[]>([]);
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
@@ -73,14 +76,42 @@ export default function FeedbackFormPage() {
 
   useEffect(() => {
     if (challengeId) {
+      if (recipientId) {
+        const uid = getUserId();
+        if (uid !== null && uid !== recipientId) {
+          clearToken();
+          const qs = new URLSearchParams({
+            challengeId: String(challengeId),
+            recipientId: String(recipientId),
+          });
+          navigate(
+            `/login?returnUrl=${encodeURIComponent(`/feedback/form?${qs.toString()}`)}`,
+            { replace: true }
+          );
+          return;
+        }
+      }
       setLoading(true);
       getFeedbackForm(challengeId)
         .then((data) => {
+          const answerMap = new Map((data.reponses ?? []).map((r) => [r.questionId, r.valeur]));
           setFormData(data);
-          setAnswers(data.questions.map(() => ''));
+          setAnswers(data.questions.map((q) => answerMap.get(q.id) ?? ''));
           setFieldErrors(data.questions.map(() => ''));
+          setNote(data.noteGlobale ?? 3);
+          setCommentaire(data.commentaire ?? '');
         })
-        .catch((err) => setError(err.response?.data?.message ?? 'Formulaire indisponible.'))
+        .catch((err) => {
+          if (err.response?.status === 403 && challengeId) {
+            clearToken();
+            navigate(
+              `/login?returnUrl=${encodeURIComponent(`/feedback/form?challengeId=${challengeId}`)}`,
+              { replace: true }
+            );
+            return;
+          }
+          setError(err.response?.data?.message ?? 'Formulaire indisponible.');
+        })
         .finally(() => setLoading(false));
       return;
     }
@@ -107,20 +138,20 @@ export default function FeedbackFormPage() {
       })
       .catch((err) => setError(err.response?.data?.message ?? 'Chargement impossible.'))
       .finally(() => setLoading(false));
-  }, [challengeId, page, size, search, statut, tag]);
+  }, [challengeId, recipientId, navigate, page, size, search, statut, tag]);
 
   function onSearchChange(value: string) {
-    setPage(0);
+    setPage(1);
     setSearch(value);
   }
 
   function onStatutChange(value: string) {
-    setPage(0);
+    setPage(1);
     setStatut(value);
   }
 
   function onTagChange(value: string) {
-    setPage(0);
+    setPage(1);
     setTag(value);
   }
 
@@ -187,6 +218,14 @@ export default function FeedbackFormPage() {
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number; data?: { message?: string } } })?.response
         ?.status;
+      if (status === 403 && challengeId) {
+        clearToken();
+        navigate(
+          `/login?returnUrl=${encodeURIComponent(`/feedback/form?challengeId=${challengeId}`)}`,
+          { replace: true }
+        );
+        return;
+      }
       const message =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
         'Échec de soumission.';
@@ -301,13 +340,11 @@ export default function FeedbackFormPage() {
                 </td>
                 <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{n.challengeTag ?? '—'}</td>
                 <td className="px-4 py-3">
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/feedback/form?challengeId=${n.codingChallengeId}`)}
-                    className="rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-brand-dark"
-                  >
-                    {t('feedbackForm.fill')}
-                  </button>
+                  <FeedbackRowAction
+                    feedbackId={n.feedbackId}
+                    feedbackStatut={n.feedbackStatut}
+                    codingChallengeId={n.codingChallengeId}
+                  />
                 </td>
               </tr>
             ))}
@@ -319,7 +356,7 @@ export default function FeedbackFormPage() {
             size={size}
             onPageChange={setPage}
             onSizeChange={(s) => {
-              setPage(0);
+              setPage(1);
               setSize(s);
             }}
           />

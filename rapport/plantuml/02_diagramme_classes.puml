@@ -1,0 +1,153 @@
+@startuml diagramme_classes
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+title CodePulse — Diagramme de classes (domaine métier simplifié)
+
+enum Role {
+  USER
+  ADMIN_CODING_CHALLENGE
+  MANAGER_RH
+  ADMIN_CODEPULSE
+}
+
+enum StatutNotification {
+  EN_ATTENTE
+  ENVOYEE
+  ECHEC
+  LUE
+}
+
+enum StatutFeedback {
+  EN_COURS
+  NON_SOUMIS
+  SOUMIS
+}
+
+enum StatutDemandeReinit {
+  EN_ATTENTE
+  LIEN_ENVOYE
+  MOT_DE_PASSE_TEMPORAIRE
+  REJETEE
+}
+
+enum TypeQuestion {
+  NOTE
+  TEXTE
+  CHOIX
+}
+
+class Utilisateur {
+  Long id
+  String email
+  String nom
+  String prenom
+  String userName
+  String password
+  Role role
+  boolean compteComplet
+  boolean status
+  Long externalId
+  String setupToken
+  ZonedDateTime setupTokenExpiresAt
+  boolean supprime
+}
+
+class CodingChallenge {
+  Long id
+  Long externalId
+  String titre
+  String description
+  String tag
+  Integer duree
+  ZonedDateTime dateCompletion
+  boolean supprime
+}
+
+class Notification {
+  Long id
+  ZonedDateTime dateEnvoi
+  ZonedDateTime dateDerniereRelance
+  int nombreRelances
+  StatutNotification statut
+  boolean supprime
+}
+
+class Feedback {
+  Long id
+  Float noteGlobale
+  String commentaire
+  StatutFeedback statutFeedback
+  String challengeTitre
+  String challengeTag
+  ZonedDateTime createdAt
+  boolean supprime
+}
+
+class QuestionFeedback {
+  Long id
+  String libelle
+  TypeQuestion type
+  boolean obligatoire
+  String choix
+  boolean supprime
+}
+
+class ReponseFeedback {
+  Long id
+  String valeur
+  Long feedbackId
+}
+
+class DemandeReinitialisation {
+  Long id
+  String email
+  StatutDemandeReinit statut
+  ZonedDateTime dateDemande
+  String resetToken
+}
+
+class IntegrationLog {
+  Long id
+  TypeLog type
+  StatutLog statut
+  String message
+  Long codingChallengeId
+  ZonedDateTime date
+}
+
+class KnowledgeDocument {
+  Long id
+  String title
+  String body
+  String category
+  String tags
+  boolean active
+}
+
+class SearchChunk {
+  Long id
+  String sourceType
+  Long sourceId
+  int chunkIndex
+  String content
+  vector embedding
+}
+
+Utilisateur "1" -- "*" Notification
+CodingChallenge "1" -- "*" Notification
+Utilisateur "1" -- "*" Feedback
+CodingChallenge "1" -- "*" Feedback
+Feedback "1" -- "*" ReponseFeedback
+QuestionFeedback "1" -- "*" ReponseFeedback
+Utilisateur "1" -- "*" DemandeReinitialisation
+Utilisateur -- Role
+Notification -- StatutNotification
+Feedback -- StatutFeedback
+QuestionFeedback -- TypeQuestion
+KnowledgeDocument ..> SearchChunk : indexé comme DOCUMENT
+CodingChallenge ..> SearchChunk : indexé CHALLENGE
+Feedback ..> SearchChunk : indexé FEEDBACK
+QuestionFeedback ..> SearchChunk : indexé QUESTION
+
+@enduml

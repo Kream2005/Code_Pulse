@@ -1,0 +1,77 @@
+@startuml cas_utilisation
+!theme plain
+left to right direction
+skinparam shadowing false
+title CodePulse — Cas d'utilisation (vue rôles)
+
+actor Candidat as U
+actor "Admin Challenge" as AC
+actor "Manager RH" as RH
+actor "Admin App" as AA
+
+rectangle CodePulse {
+  usecase "Activer son compte" as UC1
+  usecase "Se connecter (JWT)" as UC2
+  usecase "Consulter inbox" as UC3
+  usecase "Soumettre un feedback" as UC4
+  usecase "Demander reset MDP" as UC5
+
+  usecase "Ingérer / synchroniser challenges" as UC10
+  usecase "Envoyer notifications" as UC11
+  usecase "Archiver un challenge" as UC12
+  usecase "Consulter feedbacks" as UC13
+
+  usecase "Voir analytics RH" as UC20
+  usecase "Exporter indicateurs" as UC21
+
+  usecase "Gérer utilisateurs staff" as UC30
+  usecase "Gérer questions formulaire" as UC31
+  usecase "Traiter demandes reset" as UC32
+  usecase "Consulter logs intégration" as UC33
+
+  usecase "Recherche sémantique" as UC40
+  usecase "Interroger KPI" as UC41
+  usecase "Assistant RAG" as UC42
+  usecase "Gérer fiches connaissance" as UC43
+}
+
+U --> UC1
+U --> UC2
+U --> UC3
+U --> UC4
+U --> UC5
+
+AC --> UC2
+AC --> UC10
+AC --> UC11
+AC --> UC12
+AC --> UC13
+AC --> UC40
+AC --> UC41
+AC --> UC42
+
+RH --> UC2
+RH --> UC13
+RH --> UC20
+RH --> UC21
+RH --> UC40
+RH --> UC41
+RH --> UC42
+RH --> UC43
+
+AA --> UC2
+AA --> UC10
+AA --> UC11
+AA --> UC12
+AA --> UC13
+AA --> UC20
+AA --> UC30
+AA --> UC31
+AA --> UC32
+AA --> UC33
+AA --> UC40
+AA --> UC41
+AA --> UC42
+AA --> UC43
+
+@enduml

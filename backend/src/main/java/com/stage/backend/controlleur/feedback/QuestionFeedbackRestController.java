@@ -6,6 +6,7 @@ import com.stage.backend.dto.questionfeedback.QuestionFeedbackResponse;
 import com.stage.backend.enums.TypeQuestion;
 import com.stage.backend.security.SecurityRoles;
 import com.stage.backend.service.questionfeedback.QuestionFeedbackService;
+import com.stage.backend.util.PaginationUtils;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -71,12 +72,14 @@ public class QuestionFeedbackRestController {
     @GetMapping("/get-questions-pages/page")
     @PreAuthorize(SecurityRoles.MANAGE_QUESTIONS)
     public ResponseEntity<Page<QuestionFeedbackResponse>> getQuestionsPage(
-            @RequestParam @Min(0) int page,
+            @RequestParam @Min(1) int page,
             @RequestParam @Min(1) int size,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) TypeQuestion type
     ) {
-        return ResponseEntity.ok(service.searchQuestions(q, type, page, size));
+        return ResponseEntity.ok(
+                service.searchQuestions(q, type, PaginationUtils.toSpringPageIndex(page), size)
+        );
     }
 
     @GetMapping("/get-questions-by-type/type")

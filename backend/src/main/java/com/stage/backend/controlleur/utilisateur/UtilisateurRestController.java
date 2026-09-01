@@ -9,11 +9,14 @@ import com.stage.backend.dto.utilisateur.UtilisateurDto;
 import com.stage.backend.enums.Role;
 import com.stage.backend.security.SecurityRoles;
 import com.stage.backend.service.utilisateur.UtilisateurService;
+import com.stage.backend.util.PaginationUtils;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,6 +24,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/utilisateurs")
 @RequiredArgsConstructor
+@Validated
 public class UtilisateurRestController {
 
     private final UtilisateurService service;
@@ -94,12 +98,14 @@ public class UtilisateurRestController {
     @GetMapping("/get-users-pages/page")
     @PreAuthorize(SecurityRoles.ADMIN_CODEPULSE)
     public ResponseEntity<Page<UtilisateurDto>> getUtilisateursPage(
-            @RequestParam int page,
-            @RequestParam int size,
+            @RequestParam @Min(1) int page,
+            @RequestParam @Min(1) int size,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) Role role
     ) {
-        return ResponseEntity.ok(service.searchUtilisateurs(q, role, page, size));
+        return ResponseEntity.ok(
+                service.searchUtilisateurs(q, role, PaginationUtils.toSpringPageIndex(page), size)
+        );
     }
 
     @GetMapping("/exists")

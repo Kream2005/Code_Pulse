@@ -32,7 +32,7 @@ def decode_token(token: str, settings: Settings | None = None) -> CurrentUser:
     Expected claims: `iss`, `sub` (email), `roles` (list of Role names), `uid`.
     """
     settings = settings or get_settings()
-    public_key = load_public_key(settings.jwt_public_key_path)
+    public_key = load_public_key(settings.resolved_jwt_public_key_path())
     try:
         payload = jwt.decode(
             token,

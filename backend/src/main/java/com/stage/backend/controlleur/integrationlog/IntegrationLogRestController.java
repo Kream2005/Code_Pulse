@@ -5,6 +5,7 @@ import com.stage.backend.enums.StatutLog;
 import com.stage.backend.enums.TypeLog;
 import com.stage.backend.security.SecurityRoles;
 import com.stage.backend.service.integrationlog.IntegrationLogService;
+import com.stage.backend.util.PaginationUtils;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
@@ -42,13 +43,15 @@ public class IntegrationLogRestController {
     @GetMapping("/get-integration-logs-pages/page")
     @PreAuthorize(SecurityRoles.READ_LOGS)
     public ResponseEntity<Page<IntegrationLogResponse>> getIntegrationLogsPage(
-            @RequestParam @Min(0) int page,
+            @RequestParam @Min(1) int page,
             @RequestParam @Min(1) int size,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) TypeLog type,
             @RequestParam(required = false) StatutLog statut
     ) {
-        return ResponseEntity.ok(service.searchIntegrationLogs(q, type, statut, page, size));
+        return ResponseEntity.ok(service.searchIntegrationLogs(
+                q, type, statut, PaginationUtils.toSpringPageIndex(page), size
+        ));
     }
 
     @GetMapping("/get-integration-logs-by-type")

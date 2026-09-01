@@ -1,0 +1,30 @@
+@startuml sequence_ingest_notification
+!theme plain
+skinparam shadowing false
+title Séquence — Ingest challenge → notification → e-mail
+
+actor "Source externe\n/ Publisher" as SRC
+participant "Kafka\nou /ingest-batch" as IN
+participant "Spring Boot" as BE
+database "PostgreSQL" as DB
+participant "SMTP\n/ GreenMail" as MAIL
+actor "Candidat" as U
+
+SRC -> IN : CodingChallengeEvent\n(user + test)
+IN -> BE : processIncomingChallenge
+BE -> DB : upsert Utilisateur\n(compteComplet=false si nouveau)
+BE -> DB : upsert CodingChallenge
+BE -> DB : créer Notification\n(EN_ATTENTE)
+alt notification.enabled
+  BE -> MAIL : e-mail HTML\n(lien setup ou feedback)
+  BE -> DB : statut ENVOYEE\nou ECHEC
+else
+  BE -> DB : reste EN_ATTENTE\n(livraison DESACTIVE)
+end
+MAIL --> U : réception (ou /dev/mailbox)
+note right of U
+  Compte incomplet → /complete-account?token=...
+  Compte complet → /feedback/form?challengeId=...
+end note
+
+@enduml

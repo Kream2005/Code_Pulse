@@ -21,7 +21,19 @@ JWT_ROLES_CLAIM = "roles"
 JWT_UID_CLAIM = "uid"
 
 SEARCH_CHUNKS_TABLE = "search_chunk"
+KNOWLEDGE_DOCUMENTS_TABLE = "knowledge_document"
+SEARCH_INDEX_STATE_TABLE = "search_index_state"
 DEFAULT_CHUNK_SIZE = 512
 DEFAULT_CHUNK_OVERLAP = 64
 DEFAULT_TOP_K = 10
 EMBEDDING_DIM = 384
+EMBED_BATCH_SIZE = 32
+
+
+class SourceType(StrEnum):
+    """Indexed document types (stored in search_chunk.source_type)."""
+
+    CHALLENGE = "CHALLENGE"
+    FEEDBACK = "FEEDBACK"
+    QUESTION = "QUESTION"
+    DOCUMENT = "DOCUMENT"  # Manual knowledge (e.g. Capgemini company notes)

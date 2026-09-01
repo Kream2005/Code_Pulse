@@ -1,5 +1,6 @@
 package com.stage.backend.dto.notification;
 
+import com.stage.backend.enums.StatutFeedback;
 import com.stage.backend.enums.StatutNotification;
 import java.time.ZonedDateTime;
 
@@ -14,5 +15,7 @@ public record NotificationDto(
         String challengeTitre,
         String challengeTag,
         Integer challengeDuree,
-        String challengeDescription
+        String challengeDescription,
+        Long feedbackId,
+        StatutFeedback feedbackStatut
 ) {}

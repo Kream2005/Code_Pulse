@@ -28,6 +28,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import com.stage.backend.exception.FeedbackValidationException;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -80,8 +81,11 @@ class FeedbackServiceImpTest {
     }
 
     @Test
-    void submitFeedback_duplicate_returns409() {
-        when(repository.existsByUtilisateurIdAndCodingChallengeId(1L, 10L)).thenReturn(true);
+    void submitFeedback_duplicateSubmitted_returns400() {
+        Feedback submitted = new Feedback();
+        submitted.setStatutFeedback(StatutFeedback.SOUMIS);
+        when(repository.findByUtilisateurIdAndCodingChallengeIdAndSupprimeFalse(1L, 10L))
+                .thenReturn(Optional.of(submitted));
         when(codingChallengeRepository.findById(10L)).thenReturn(Optional.of(challenge));
 
         SubmitFeedbackRequest request = new SubmitFeedbackRequest(
@@ -94,8 +98,12 @@ class FeedbackServiceImpTest {
 
     @Test
     void submitFeedback_missingMandatoryAnswer_returns400() {
-        when(repository.existsByUtilisateurIdAndCodingChallengeId(1L, 10L)).thenReturn(false);
+        when(repository.findByUtilisateurIdAndCodingChallengeIdAndSupprimeFalse(1L, 10L))
+                .thenReturn(Optional.empty());
+        when(repository.existsByCodingChallengeId(10L)).thenReturn(false);
         when(codingChallengeRepository.findById(10L)).thenReturn(Optional.of(challenge));
+        when(notificationRepository.findByUtilisateurIdAndCodingChallengeId(1L, 10L))
+                .thenReturn(Optional.of(new Notification()));
         when(questionFeedbackRepository.findByObligatoire(true)).thenReturn(List.of(mandatoryQuestion));
 
         SubmitFeedbackRequest request = new SubmitFeedbackRequest(
@@ -108,7 +116,9 @@ class FeedbackServiceImpTest {
 
     @Test
     void submitFeedback_happyPath_marksNotificationAsLue() {
-        when(repository.existsByUtilisateurIdAndCodingChallengeId(1L, 10L)).thenReturn(false);
+        when(repository.findByUtilisateurIdAndCodingChallengeIdAndSupprimeFalse(1L, 10L))
+                .thenReturn(Optional.empty());
+        when(repository.existsByCodingChallengeId(10L)).thenReturn(false);
         when(codingChallengeRepository.findById(10L)).thenReturn(Optional.of(challenge));
         when(utilisateurRepository.findById(1L)).thenReturn(Optional.of(user));
         when(questionFeedbackRepository.findByObligatoire(true)).thenReturn(List.of(mandatoryQuestion));
@@ -120,6 +130,7 @@ class FeedbackServiceImpTest {
         saved.setCodingChallenge(challenge);
         saved.setStatutFeedback(StatutFeedback.SOUMIS);
         when(repository.save(any(Feedback.class))).thenReturn(saved);
+        when(reponseFeedbackRepository.findByFeedbackId(any())).thenReturn(List.of());
 
         Notification notification = new Notification();
         notification.setStatut(StatutNotification.EN_ATTENTE);
@@ -139,5 +150,35 @@ class FeedbackServiceImpTest {
         assertThat(notification.getStatut()).isEqualTo(StatutNotification.LUE);
         verify(notificationRepository).save(notification);
         verify(integrationLogService).logEvent(any(), any(), any(), eq(10L));
+    }
+
+    @Test
+    void getFeedbackForm_withoutNotification_returns403() {
+        when(codingChallengeRepository.findById(10L)).thenReturn(Optional.of(challenge));
+        when(questionFeedbackRepository.findBySupprimeFalse()).thenReturn(List.of());
+        when(repository.findByUtilisateurIdAndCodingChallengeIdAndSupprimeFalse(2L, 10L))
+                .thenReturn(Optional.empty());
+        when(notificationRepository.findByUtilisateurIdAndCodingChallengeId(2L, 10L))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.getFeedbackForm(10L, 2L))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("ne vous est pas destiné");
+    }
+
+    @Test
+    void getFeedbackForm_withDraftButNoNotification_returns403() {
+        Feedback draft = new Feedback();
+        draft.setStatutFeedback(StatutFeedback.EN_COURS);
+        when(codingChallengeRepository.findById(10L)).thenReturn(Optional.of(challenge));
+        when(questionFeedbackRepository.findBySupprimeFalse()).thenReturn(List.of());
+        when(repository.findByUtilisateurIdAndCodingChallengeIdAndSupprimeFalse(2L, 10L))
+                .thenReturn(Optional.of(draft));
+        when(notificationRepository.findByUtilisateurIdAndCodingChallengeId(2L, 10L))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.getFeedbackForm(10L, 2L))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("ne vous est pas destiné");
     }
 }

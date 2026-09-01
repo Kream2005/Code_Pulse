@@ -7,12 +7,15 @@ import com.stage.backend.enums.StatutFeedback;
 import com.stage.backend.security.JwtUtils;
 import com.stage.backend.security.SecurityRoles;
 import com.stage.backend.service.feedback.FeedbackService;
+import com.stage.backend.util.PaginationUtils;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import java.time.ZonedDateTime;
@@ -20,6 +23,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/feedbacks")
 @RequiredArgsConstructor
+@Validated
 public class FeedbackRestController {
 
     private final FeedbackService service;
@@ -63,13 +67,15 @@ public class FeedbackRestController {
     @GetMapping("/get-feedback-pages/page")
     @PreAuthorize(SecurityRoles.READ_FEEDBACKS)
     public ResponseEntity<Page<FeedbackResponse>> getFeedbacksPage(
-            @RequestParam int page,
-            @RequestParam int size,
+            @RequestParam @Min(1) int page,
+            @RequestParam @Min(1) int size,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) StatutFeedback statut,
             @RequestParam(required = false) String tag
     ) {
-        return ResponseEntity.ok(service.searchFeedbacks(q, statut, tag, page, size));
+        return ResponseEntity.ok(
+                service.searchFeedbacks(q, statut, tag, PaginationUtils.toSpringPageIndex(page), size)
+        );
     }
 
     @GetMapping("/get-feedback-by-statut")
@@ -112,8 +118,8 @@ public class FeedbackRestController {
     @PreAuthorize(SecurityRoles.USER_OR_READ_FEEDBACKS)
     public ResponseEntity<Page<FeedbackResponse>> getFeedbacksByUtilisateurPage(
             @RequestParam Long utilisateurId,
-            @RequestParam int page,
-            @RequestParam int size,
+            @RequestParam @Min(1) int page,
+            @RequestParam @Min(1) int size,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) StatutFeedback statut,
             @RequestParam(required = false) String tag
@@ -122,7 +128,9 @@ public class FeedbackRestController {
         if (!utilisateurId.equals(currentUserId) && !hasReadFeedbackRole()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
-        return ResponseEntity.ok(service.searchFeedbacksByUtilisateur(utilisateurId, q, statut, tag, page, size));
+        return ResponseEntity.ok(service.searchFeedbacksByUtilisateur(
+                utilisateurId, q, statut, tag, PaginationUtils.toSpringPageIndex(page), size
+        ));
     }
 
     @GetMapping("/get-feedback-by-created-at")

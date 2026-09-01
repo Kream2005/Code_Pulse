@@ -1,0 +1,63 @@
+@startuml architecture_globale
+!theme plain
+skinparam componentStyle rectangle
+skinparam shadowing false
+title CodePulse — Architecture globale
+
+actor Candidat
+actor "Admin Challenge" as AC
+actor "Manager RH" as RH
+actor "Admin App" as AA
+
+rectangle "Frontend React\n:4200 (Vite)" as FE {
+  [UI Candidat] as UIC
+  [UI Admin] as UIA
+  [Recherche intelligente] as UIS
+}
+
+rectangle "Backend Spring Boot\n:8080" as BE {
+  [Auth JWT RS256] as AUTH
+  [Challenges / Notifs / Feedbacks] as METIER
+  [Analytics / Users / Questions / Logs] as GOUV
+  [Mail SMTP / GreenMail] as MAIL
+  [Kafka Consumer] as KC
+}
+
+rectangle "codepulse-search\nFastAPI :8090" as SR {
+  [Hybrid Search] as HS
+  [KPI SQL] as KPI
+  [Assistant RAG] as RAG
+  [Knowledge + Ingestion] as KN
+}
+
+database "PostgreSQL\n+ pgvector" as DB {
+  [Tables métier Spring] as T1
+  [search_chunk / knowledge_document] as T2
+}
+
+queue "Kafka\n:9092" as KAFKA
+rectangle "Publisher\n:9999" as PUB
+rectangle "Ollama\n:11434\n(optionnel)" as OLL
+
+Candidat --> UIC
+AC --> UIA
+RH --> UIA
+AA --> UIA
+AA --> UIS
+RH --> UIS
+AC --> UIS
+
+FE --> BE : REST + JWT
+FE --> SR : /search /kpi /assistant\n(proxy Vite)
+BE --> DB
+SR --> DB
+BE --> MAIL
+KC --> METIER
+KAFKA --> KC
+PUB --> KAFKA : coding-challenges
+PUB --> BE : ingest HTTP (alt.)
+RAG --> OLL : prose (si dispo)
+HS --> T2
+METIER --> T1
+
+@enduml

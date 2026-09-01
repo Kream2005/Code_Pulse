@@ -1,0 +1,2769 @@
+{
+  "info": {
+    "name": "CodePulse Full Showcase",
+    "description": "Collection complète pour démo manager / soutenance. Importer avec CodePulse-Local.postman_environment.json. Voir docs/POSTMAN-SHOWCASE-GUIDE.md pour l'ordre d'exécution et le mode DB create.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "00 — Setup & Health",
+      "item": [
+        {
+          "name": "Spring — reachable (GET /dev/relance/run)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/dev/relance/run"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Spring reachable', () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Search — health",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{search}}/health"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Search up', () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Search — ready (DB + Ollama)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{search}}/health/ready"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Search ready', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().database).to.eql(true); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ],
+      "description": "Vérifier que Spring (:8080) et Search (:8090) tournent avant la démo."
+    },
+    {
+      "name": "01 — Auth (4 rôles)",
+      "item": [
+        {
+          "name": "Login APP ADMIN",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"{{email_app_admin}}\",\"password\":\"{{password_app_admin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.expect(j.accessToken).to.be.a('string');",
+                  "pm.environment.set('token', j.accessToken);",
+                  "pm.environment.set('token_app_admin', j.accessToken);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login CHALLENGE ADMIN",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"{{email_challenge_admin}}\",\"password\":\"{{password_challenge_admin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.expect(j.accessToken).to.be.a('string');",
+                  "pm.environment.set('token', j.accessToken);",
+                  "pm.environment.set('token_challenge_admin', j.accessToken);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login MANAGER RH",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"{{email_manager}}\",\"password\":\"{{password_manager}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.expect(j.accessToken).to.be.a('string');",
+                  "pm.environment.set('token', j.accessToken);",
+                  "pm.environment.set('token_manager', j.accessToken);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login USER (demo.user)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"{{email_demo_user}}\",\"password\":\"{{password_demo_user}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.expect(j.accessToken).to.be.a('string');",
+                  "pm.environment.set('token', j.accessToken);",
+                  "pm.environment.set('token_user', j.accessToken);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/me (token courant)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/api/me",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Profile OK', () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/api/profile",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login — mauvais mot de passe (401, test volontaire)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"{{email_app_admin}}\",\"password\":\"IntentionallyWrongPassword!\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('401', () => pm.response.to.have.status(401));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 — Ingest challenges (4 cas métier)",
+      "item": [
+        {
+          "name": "C1 — BOTH_NEW (nouvel user + nouveau challenge)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/coding-challenges/ingest-batch",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"user\": {\n      \"id\": {{external_user_id}},\n      \"nom\": \"Dupont\",\n      \"prenom\": \"Alice\",\n      \"userName\": \"alice.dupont.postman\",\n      \"email\": \"{{candidate_email}}\",\n      \"status\": true\n    },\n    \"test\": {\n      \"id\": {{external_test_id}},\n      \"titre\": \"Two Sum Postman\",\n      \"description\": \"Find two numbers that add up to target.\",\n      \"tag\": \"arrays\",\n      \"duree\": 45,\n      \"codeUrl\": \"https://example.com/two-sum\",\n      \"parameter\": false\n    }\n  }\n]"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Ingest succeeded', () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 207]);",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j.succeeded).to.be.at.least(1);",
+                  "  const item = j.items[0];",
+                  "  pm.environment.set('user_id', String(item.userId));",
+                  "  pm.environment.set('challenge_id', String(item.challengeId));",
+                  "  pm.environment.set('external_user_id', String(item.userExternalId));",
+                  "  pm.environment.set('external_test_id', String(item.testExternalId));",
+                  "  pm.environment.set('candidate_email', item.userEmail);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "C2 — USER_EXISTS + nouveau test",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/coding-challenges/ingest-batch",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"user\": {\n      \"id\": {{external_user_id}},\n      \"nom\": \"Dupont\",\n      \"prenom\": \"Alice\",\n      \"userName\": \"alice.dupont.postman\",\n      \"email\": \"{{candidate_email}}\",\n      \"status\": true\n    },\n    \"test\": {\n      \"id\": {{external_test_id_2}},\n      \"titre\": \"Valid Parentheses Postman\",\n      \"description\": \"Check balanced brackets.\",\n      \"tag\": \"stacks\",\n      \"duree\": 30,\n      \"codeUrl\": \"https://example.com/parentheses\",\n      \"parameter\": false\n    }\n  }\n]"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Ingest succeeded', () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 207]);",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j.succeeded).to.be.at.least(1);",
+                  "  const item = j.items[0];",
+                  "  pm.environment.set('user_id', String(item.userId));",
+                  "  pm.environment.set('challenge_id', String(item.challengeId));",
+                  "  pm.environment.set('external_user_id', String(item.userExternalId));",
+                  "  pm.environment.set('external_test_id', String(item.testExternalId));",
+                  "  pm.environment.set('candidate_email', item.userEmail);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "C3 — BOTH_EXIST (idempotent, même event C1)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/coding-challenges/ingest-batch",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"user\": {\n      \"id\": {{external_user_id}},\n      \"nom\": \"Dupont\",\n      \"prenom\": \"Alice\",\n      \"userName\": \"alice.dupont.postman\",\n      \"email\": \"{{candidate_email}}\",\n      \"status\": true\n    },\n    \"test\": {\n      \"id\": {{external_test_id}},\n      \"titre\": \"Two Sum Postman\",\n      \"description\": \"Find two numbers that add up to target.\",\n      \"tag\": \"arrays\",\n      \"duree\": 45,\n      \"codeUrl\": \"https://example.com/two-sum\",\n      \"parameter\": false\n    }\n  }\n]"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "",
+                  "pm.test('Idempotent ingest', () => pm.response.to.have.status(200));",
+                  "const item = pm.response.json().items[0];",
+                  "pm.expect(item.entityCase).to.eql('BOTH_EXIST');",
+                  "pm.expect(item.notificationAlreadyExisted).to.eql(true);",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "C4 — demo.user (compte complet) + nouveau challenge",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/coding-challenges/ingest-batch",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"user\": {\n      \"id\": 90002,\n      \"nom\": \"User\",\n      \"prenom\": \"Demo\",\n      \"userName\": \"demo.user\",\n      \"email\": \"demo.user@codepulse.local\",\n      \"status\": true\n    },\n    \"test\": {\n      \"id\": 880099,\n      \"titre\": \"Merge Intervals Demo\",\n      \"description\": \"Merge overlapping intervals for demo user.\",\n      \"tag\": \"intervals\",\n      \"duree\": 40,\n      \"codeUrl\": \"https://example.com/merge\",\n      \"parameter\": false\n    }\n  }\n]"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "",
+                  "pm.test('C4 ingest', () => pm.response.to.have.status(200));",
+                  "const item = pm.response.json().items[0];",
+                  "pm.expect(item.entityCase).to.eql('USER_EXISTS_CHALLENGE_NEW');",
+                  "pm.environment.set('challenge_id', String(item.challengeId));",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ingest — sans token (403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/coding-challenges/ingest-batch",
+            "body": {
+              "mode": "raw",
+              "raw": "[]"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('403', () => pm.response.to.have.status(403));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ingest — event invalide (test manquant)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/coding-challenges/ingest-batch",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "[{\"user\":{\"id\":1,\"email\":\"x@y.com\",\"nom\":\"X\",\"prenom\":\"Y\",\"userName\":\"x\",\"status\":true}}]"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Validation fail', () => pm.expect(pm.response.json().failed).to.be.at.least(1));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET challenge by id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/coding-challenges/get-coding-challenge/{{challenge_id}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET challenges page (search Postman)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/coding-challenges/get-coding-challenges-pages/page?page=1&size=10&q=Postman",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET tags",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/coding-challenges/tags",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET count challenges",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/coding-challenges/count-coding-challenges",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "description": "Utiliser des external_user_id / external_test_id uniques à chaque démo fraîche (voir guide)."
+    },
+    {
+      "name": "03 — Notifications (cœur démo)",
+      "item": [
+        {
+          "name": "POST envoyer notification (récupère urlAction + setup_token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/notifications",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"utilisateurId\": {{user_id}}, \"codingChallengeId\": {{challenge_id}}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Notification response', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.expect(j.urlAction, 'urlAction missing — copy token manually from DB/email').to.be.a('string');",
+                  "if (j.notification && j.notification.id) {",
+                  "  pm.environment.set('notification_id', String(j.notification.id));",
+                  "}",
+                  "const url = j.urlAction || '';",
+                  "const m = url.match(/[?&]token=([^&]+)/);",
+                  "pm.expect(m, 'No token= in urlAction: ' + url).to.be.ok;",
+                  "pm.environment.set('setup_token', decodeURIComponent(m[1]));",
+                  "console.log('setup_token saved:', m[1]);",
+                  "const m2 = url.match(/[?&]challengeId=(\\d+)/);",
+                  "if (m2) pm.environment.set('challenge_id', m2[1]);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST notification — idempotent (déjà existante, refresh urlAction)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/notifications",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"utilisateurId\": {{user_id}}, \"codingChallengeId\": {{challenge_id}}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Notification response', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.expect(j.urlAction, 'urlAction missing — copy token manually from DB/email').to.be.a('string');",
+                  "if (j.notification && j.notification.id) {",
+                  "  pm.environment.set('notification_id', String(j.notification.id));",
+                  "}",
+                  "const url = j.urlAction || '';",
+                  "const m = url.match(/[?&]token=([^&]+)/);",
+                  "pm.expect(m, 'No token= in urlAction: ' + url).to.be.ok;",
+                  "pm.environment.set('setup_token', decodeURIComponent(m[1]));",
+                  "console.log('setup_token saved:', m[1]);",
+                  "const m2 = url.match(/[?&]challengeId=(\\d+)/);",
+                  "if (m2) pm.environment.set('challenge_id', m2[1]);",
+                  "pm.expect(pm.response.json().dejaExistante).to.eql(true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET notification by id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/notifications/get-notification/{{notification_id}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET notifications by utilisateur",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/notifications/get-notification-by-utilisateur?utilisateurId={{user_id}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET notifications page (user inbox)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/notifications/get-notifications-by-utilisateur-pages/page?utilisateurId={{user_id}}&page=1&size=10",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET all notifications (admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/notifications/get-all-notifications",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET notifications page + filtre ENVOYEE",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/notifications/get-notifications-pages/page?page=1&size=10&statut=ENVOYEE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET count notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/notifications/count",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET count by statut ENVOYEE",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/notifications/count/statut?statut=ENVOYEE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "PATCH statut → LUE",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/notifications/update-statut/{{notification_id}}/statut?statut=LUE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statut LUE', () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Dev mailbox JSON (standalone GreenMail)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/dev/mailbox/json",
+            "body": {
+              "mode": "raw",
+              "raw": "pm.test('Mailbox JSON', () => pm.response.to.have.status(200));\nconst mails = pm.response.json();\npm.expect(mails).to.be.an('array');\nif (mails.length) {\n  const body = mails[0].body || '';\n  const m = body.match(/token=([a-f0-9-]{36})/i);\n  if (m) pm.environment.set('setup_token', m[1]);\n  const r = body.match(/reset[^\"]*token=([a-f0-9-]{36})/i);\n  if (r) pm.environment.set('reset_token', r[1]);\n}"
+            }
+          }
+        },
+        {
+          "name": "Dev relance — run now (standalone)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/dev/relance/run"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "",
+                  "pm.test('Relance endpoint', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "console.log('Relances sent:', j.sent, j.message);",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logs — type RELANCE",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/integration-logs/get-integration-logs-by-type?type=RELANCE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Logs — type ENVOI_NOTIFICATION",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/integration-logs/get-integration-logs-by-type?type=ENVOI_NOTIFICATION",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "description": "Pour Gmail : lire l'e-mail dans votre boîte au lieu de /dev/mailbox. urlAction aussi dans POST /notifications."
+    },
+    {
+      "name": "04 — Complete account (nouveau candidat C1)",
+      "item": [
+        {
+          "name": "GET setup-info (needs setup_token from POST /notifications)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/auth/setup-info?token={{setup_token}}"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const t = pm.environment.get('setup_token');",
+                  "if (!t || t.includes('{') || t.length < 30) {",
+                  "  throw new Error(",
+                  "    'setup_token is empty or not resolved. Run POST /notifications first and check the Tests tab.'",
+                  "  );",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Setup info OK', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.expect(j.email).to.eql(pm.environment.get('candidate_email'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST complete-account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/auth/complete-account",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{setup_token}}\",\n  \"password\": \"{{candidate_password}}\",\n  \"nom\": \"{{candidate_nom}}\",\n  \"prenom\": \"{{candidate_prenom}}\",\n  \"userName\": \"{{candidate_username}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Account completed', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.environment.set('token_user', j.accessToken);",
+                  "console.log('token_user saved — use for feedback; re-login admin before search steps');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 — Feedback (USER — token must be candidat, not admin)",
+      "item": [
+        {
+          "name": "GET feedback form (Bearer = token_user after complete-account)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/feedbacks/form?challengeId={{challenge_id}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Feedback form', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "if (j.questions && j.questions.length) {",
+                  "  const q = j.questions.find(x => x.obligatoire) || j.questions[0];",
+                  "  pm.environment.set('question_id', String(q.id));",
+                  "}",
+                  "pm.environment.set('token', pm.environment.get('token_user'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST submit feedback SOUMIS",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/feedbacks/submit",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codingChallengeId\": {{challenge_id}},\n  \"noteGlobale\": 4.5,\n  \"commentaire\": \"Challenge clair — test Postman.\",\n  \"statut\": \"SOUMIS\",\n  \"reponses\": [\n    { \"questionId\": {{question_id}}, \"valeur\": \"4\" }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const qid = pm.environment.get('question_id');",
+                  "if (!qid || qid.includes('{')) {",
+                  "  throw new Error('question_id is empty. Run GET /feedbacks/form first (with token_user Bearer).');",
+                  "}",
+                  "const tok = pm.environment.get('token_user');",
+                  "if (tok) pm.environment.set('token', tok);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "",
+                  "pm.test('Feedback submitted', () => pm.response.to.have.status(200));",
+                  "pm.environment.set('feedback_id', String(pm.response.json().id));",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET feedback details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/feedbacks/details/{{feedback_id}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET feedback pages (admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/feedbacks/get-feedback-pages/page?page=1&size=10&tag=arrays",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET average note (admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/feedbacks/get-average-note",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET count feedbacks",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/feedbacks/count-all-feedbacks",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Relance après SOUMIS — doit être 0",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/dev/relance/run",
+            "body": {
+              "mode": "raw",
+              "raw": "pm.test('No relance', () => pm.expect(pm.response.json().sent).to.eql(0));"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 — Password reset",
+      "item": [
+        {
+          "name": "POST forgot-password (demo.user)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/auth/forgot-password",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"demo.user@codepulse.local\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Forgot OK', () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET demandes EN_ATTENTE (app admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/demandes-reinit/page?page=1&size=10&statut=EN_ATTENTE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "\npm.test('Demandes', () => pm.response.to.have.status(200));\nconst page = pm.response.json();\nif (page.content && page.content.length) {\n  pm.environment.set('demande_id', String(page.content[0].id));\n}\n"
+            }
+          }
+        },
+        {
+          "name": "POST send-link",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/demandes-reinit/{{demande_id}}/send-link",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Dev mailbox — extract reset_token",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/dev/mailbox/json",
+            "body": {
+              "mode": "raw",
+              "raw": "pm.test('Mailbox JSON', () => pm.response.to.have.status(200));\nconst mails = pm.response.json();\npm.expect(mails).to.be.an('array');\nif (mails.length) {\n  const body = mails[0].body || '';\n  const m = body.match(/token=([a-f0-9-]{36})/i);\n  if (m) pm.environment.set('setup_token', m[1]);\n  const r = body.match(/reset[^\"]*token=([a-f0-9-]{36})/i);\n  if (r) pm.environment.set('reset_token', r[1]);\n}"
+            }
+          }
+        },
+        {
+          "name": "GET reset-info",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/auth/reset-info?token={{reset_token}}"
+          }
+        },
+        {
+          "name": "POST reset-password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/auth/reset-password",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"token\":\"{{reset_token}}\",\"password\":\"ResetPass1234!\"}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 — Users & Questions (APP ADMIN)",
+      "item": [
+        {
+          "name": "POST add staff user (MANAGER_RH)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/utilisateurs/add-user",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Test\",\n  \"prenom\": \"Staff\",\n  \"email\": \"staff.test@codepulse.local\",\n  \"rawPassword\": \"Staff1234!\",\n  \"role\": \"MANAGER_RH\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "",
+                  "pm.test('Staff created', () => pm.response.to.have.status(200));",
+                  "pm.environment.set('staff_user_id', String(pm.response.json().id));",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST add-user role USER — must 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/utilisateurs/add-user",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nom\":\"X\",\"prenom\":\"Y\",\"email\":\"bad@x.com\",\"rawPassword\":\"Bad1234!\",\"role\":\"USER\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('400 ROLE_NON_AUTORISE', () => pm.response.to.have.status(400));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET all users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/utilisateurs/get-all-users",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET user by email",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/utilisateurs/get-user-by-email?email={{candidate_email}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST add question NOTE",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/questions-feedback/add-question",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"libelle\":\"Note globale ressentie\",\"type\":\"NOTE\",\"obligatoire\":true}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "",
+                  "pm.test('Question created', () => pm.response.to.have.status(200));",
+                  "pm.environment.set('question_id', String(pm.response.json().id));",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET all questions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/questions-feedback/get-all-questions",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET questions obligatoires",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/questions-feedback/get-questions-by-obligatoire?obligatoire=true",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 — Analytics & Logs",
+      "item": [
+        {
+          "name": "Dashboard USER",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/analytics/dashboard/user",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Dashboard challenge admin",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/analytics/dashboard/challenge-admin",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Dashboard manager",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/analytics/dashboard/manager",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Dashboard app admin",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/analytics/dashboard/app-admin",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Average score by tag arrays",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/analytics/average-score-by-tag?tag=arrays",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Feedback participation",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/analytics/feedback-participation",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Top challenges",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/analytics/top-challenges?limit=5",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Export CSV",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/analytics/export?startDate=2024-01-01T00:00:00Z&endDate=2030-01-01T00:00:00Z&format=csv",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Integration logs — all",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/integration-logs/get-all-integration-logs",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Integration logs — failed count",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/integration-logs/count/failed",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 — Smart Search (8090)",
+      "item": [
+        {
+          "name": "POST search libre",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{search}}/search",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\":\"feedback stacks\",\"top_k\":10,\"filters\":{}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "",
+                  "pm.test('Search OK', () => pm.response.to.have.status(200));",
+                  "pm.expect(pm.response.json().results).to.be.an('array');",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST search CHALLENGE + tag arrays",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{search}}/search",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\":\"two sum\",\"top_k\":8,\"filters\":{\"source_type\":\"CHALLENGE\",\"tag\":\"arrays\"}}"
+            }
+          }
+        },
+        {
+          "name": "POST KPI — moyenne notes",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{search}}/kpi",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"question\":\"Quelle est la moyenne des notes ?\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "",
+                  "pm.test('KPI', () => pm.response.to.have.status(200));",
+                  "pm.expect(pm.response.json()).to.have.property('tool');",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST KPI — participation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{search}}/kpi",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"question\":\"Quel est le taux de participation ?\"}"
+            }
+          }
+        },
+        {
+          "name": "POST KPI — count challenges",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{search}}/kpi",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"question\":\"Combien de challenges ?\"}"
+            }
+          }
+        },
+        {
+          "name": "POST Assistant — Capgemini",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{search}}/assistant",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"question\":\"Quels sont les principaux services de Capgemini ?\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "",
+                  "pm.test('Assistant', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.expect(j.answer).to.be.a('string');",
+                  "console.log('Answer length:', j.answer.length, 'Citations:', (j.citations||[]).length);",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST knowledge document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{search}}/knowledge/documents",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Capgemini — note Postman\",\n  \"body\": \"Capgemini est un groupe de conseil et services numériques.\",\n  \"category\": \"company\",\n  \"tags\": \"capgemini,company,postman\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "",
+                  "pm.test('Knowledge created', () => pm.response.to.have.status(201));",
+                  "pm.environment.set('knowledge_doc_id', String(pm.response.json().id));",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST ingestion sync incremental",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{search}}/ingestion/sync",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"full\": false}"
+            }
+          }
+        },
+        {
+          "name": "GET ingestion status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{search}}/ingestion/status",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 — Role matrix (403 smoke)",
+      "item": [
+        {
+          "name": "USER → ingest (403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/coding-challenges/ingest-batch",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "[]"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('403', () => pm.response.to.have.status(403));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "MANAGER → add-user (403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/utilisateurs/add-user",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nom\":\"X\",\"prenom\":\"Y\",\"email\":\"x@y.com\",\"rawPassword\":\"X12345678!\",\"role\":\"MANAGER_RH\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('403', () => pm.response.to.have.status(403));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "CHALLENGE ADMIN → search FEEDBACK filter (403 on search svc)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{search}}/search",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\":\"commentaires\",\"top_k\":5,\"filters\":{\"source_type\":\"FEEDBACK\"}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('403 scope', () => pm.response.to.have.status(403));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ],
+      "description": "Changer token via Login du bon rôle avant chaque requête, ou dupliquer avec auth fixe."
+    },
+    {
+      "name": "99 — E2E Showcase (ordre manager)",
+      "item": [
+        {
+          "name": "1 — Login APP ADMIN",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"{{email_app_admin}}\",\"password\":\"{{password_app_admin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.expect(j.accessToken).to.be.a('string');",
+                  "pm.environment.set('token', j.accessToken);",
+                  "pm.environment.set('token_app_admin', j.accessToken);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "2 — Ingest C1 BOTH_NEW",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/coding-challenges/ingest-batch",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"user\": {\n      \"id\": {{external_user_id}},\n      \"nom\": \"Dupont\",\n      \"prenom\": \"Alice\",\n      \"userName\": \"alice.dupont.postman\",\n      \"email\": \"{{candidate_email}}\",\n      \"status\": true\n    },\n    \"test\": {\n      \"id\": {{external_test_id}},\n      \"titre\": \"Two Sum Postman\",\n      \"description\": \"Find two numbers that add up to target.\",\n      \"tag\": \"arrays\",\n      \"duree\": 45,\n      \"codeUrl\": \"https://example.com/two-sum\",\n      \"parameter\": false\n    }\n  }\n]"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Ingest succeeded', () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 207]);",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j.succeeded).to.be.at.least(1);",
+                  "  const item = j.items[0];",
+                  "  pm.environment.set('user_id', String(item.userId));",
+                  "  pm.environment.set('challenge_id', String(item.challengeId));",
+                  "  pm.environment.set('external_user_id', String(item.userExternalId));",
+                  "  pm.environment.set('external_test_id', String(item.testExternalId));",
+                  "  pm.environment.set('candidate_email', item.userEmail);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "3 — Send notification + urlAction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/notifications",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"utilisateurId\": {{user_id}}, \"codingChallengeId\": {{challenge_id}}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Notification response', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.expect(j.urlAction, 'urlAction missing — copy token manually from DB/email').to.be.a('string');",
+                  "if (j.notification && j.notification.id) {",
+                  "  pm.environment.set('notification_id', String(j.notification.id));",
+                  "}",
+                  "const url = j.urlAction || '';",
+                  "const m = url.match(/[?&]token=([^&]+)/);",
+                  "pm.expect(m, 'No token= in urlAction: ' + url).to.be.ok;",
+                  "pm.environment.set('setup_token', decodeURIComponent(m[1]));",
+                  "console.log('setup_token saved:', m[1]);",
+                  "const m2 = url.match(/[?&]challengeId=(\\d+)/);",
+                  "if (m2) pm.environment.set('challenge_id', m2[1]);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "4 — Mailbox ou Gmail (voir guide)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/dev/mailbox/json",
+            "body": {
+              "mode": "raw",
+              "raw": "pm.test('Mailbox JSON', () => pm.response.to.have.status(200));\nconst mails = pm.response.json();\npm.expect(mails).to.be.an('array');\nif (mails.length) {\n  const body = mails[0].body || '';\n  const m = body.match(/token=([a-f0-9-]{36})/i);\n  if (m) pm.environment.set('setup_token', m[1]);\n  const r = body.match(/reset[^\"]*token=([a-f0-9-]{36})/i);\n  if (r) pm.environment.set('reset_token', r[1]);\n}"
+            }
+          }
+        },
+        {
+          "name": "5 — setup-info",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/auth/setup-info?token={{setup_token}}"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const t = pm.environment.get('setup_token');",
+                  "if (!t || t.includes('{') || t.length < 30) {",
+                  "  throw new Error(",
+                  "    'setup_token is empty or not resolved. Run POST /notifications first and check the Tests tab.'",
+                  "  );",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Setup info OK', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.expect(j.email).to.eql(pm.environment.get('candidate_email'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "6 — complete-account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/auth/complete-account",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"token\":\"{{setup_token}}\",\"password\":\"{{candidate_password}}\",\"nom\":\"{{candidate_nom}}\",\"prenom\":\"{{candidate_prenom}}\",\"userName\":\"{{candidate_username}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Account completed', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.environment.set('token_user', j.accessToken);",
+                  "console.log('token_user saved — use for feedback; re-login admin before search steps');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "7 — feedback form (Bearer token_user)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/feedbacks/form?challengeId={{challenge_id}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "pm.test('Feedback form', () => pm.response.to.have.status(200));\nconst j = pm.response.json();\nif (j.questions && j.questions.length) {\n  const q = j.questions.find(x => x.obligatoire) || j.questions[0];\n  pm.environment.set('question_id', String(q.id));\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const tok = pm.environment.get('token_user');",
+                  "if (!tok) throw new Error('token_user missing — run step 6 complete-account first');",
+                  "pm.environment.set('token', tok);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "8 — submit feedback (Bearer token_user)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/feedbacks/submit",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codingChallengeId\": {{challenge_id}},\n  \"noteGlobale\": 4.5,\n  \"commentaire\": \"Challenge clair — test Postman.\",\n  \"statut\": \"SOUMIS\",\n  \"reponses\": [\n    { \"questionId\": {{question_id}}, \"valeur\": \"4\" }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const qid = pm.environment.get('question_id');",
+                  "if (!qid || qid.includes('{')) {",
+                  "  throw new Error('question_id is empty. Run GET /feedbacks/form first (with token_user Bearer).');",
+                  "}",
+                  "const tok = pm.environment.get('token_user');",
+                  "if (tok) pm.environment.set('token', tok);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "9 — relance blocked",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/dev/relance/run",
+            "body": {
+              "mode": "raw",
+              "raw": "pm.expect(pm.response.json().sent).to.eql(0);"
+            }
+          }
+        },
+        {
+          "name": "10 — Login APP ADMIN again (search needs admin, not USER)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{spring}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"{{email_app_admin}}\",\"password\":\"{{password_app_admin}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.expect(j.accessToken).to.be.a('string');",
+                  "pm.environment.set('token', j.accessToken);",
+                  "pm.environment.set('token_app_admin', j.accessToken);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "11 — KPI participation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{search}}/kpi",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"question\":\"Quel est le taux de participation ?\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const tok = pm.environment.get('token_app_admin');",
+                  "if (!tok) throw new Error('token_app_admin missing — run step 1 Login APP ADMIN first');",
+                  "pm.environment.set('token', tok);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "12 — Assistant Capgemini",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{search}}/assistant",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"question\":\"Quels sont les principaux services de Capgemini ?\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const tok = pm.environment.get('token_app_admin');",
+                  "if (!tok) throw new Error('token_app_admin missing — run step 1 Login APP ADMIN first');",
+                  "pm.environment.set('token', tok);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ],
+      "description": "Exécuter ce dossier en Collection Runner pour la démo live devant le manager."
+    }
+  ]
+}

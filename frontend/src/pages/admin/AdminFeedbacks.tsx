@@ -26,7 +26,7 @@ function userLabel(f: FeedbackResponse) {
 export default function AdminFeedbacks() {
   const { t } = useI18n();
   const [items, setItems] = useState<FeedbackResponse[]>([]);
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
@@ -56,17 +56,17 @@ export default function AdminFeedbacks() {
   }, [page, size, search, statutFilter, tagFilter]);
 
   function onSearchChange(value: string) {
-    setPage(0);
+    setPage(1);
     setSearch(value);
   }
 
   function onStatutFilterChange(value: string) {
-    setPage(0);
+    setPage(1);
     setStatutFilter(value);
   }
 
   function onTagFilterChange(value: string) {
-    setPage(0);
+    setPage(1);
     setTagFilter(value);
   }
 
@@ -147,7 +147,7 @@ export default function AdminFeedbacks() {
           size={size}
           onPageChange={setPage}
           onSizeChange={(s) => {
-            setPage(0);
+            setPage(1);
             setSize(s);
           }}
         />

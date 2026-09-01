@@ -6,6 +6,7 @@ __pycache__/
 *.so
 .Python
 .env
+models/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/

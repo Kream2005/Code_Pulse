@@ -36,6 +36,10 @@ public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
     long countByUtilisateurIdAndSupprimeFalse(Long utilisateurId);
 
     boolean existsByUtilisateurIdAndCodingChallengeId(Long utilisateurId, Long codingChallengeId);
+    Optional<Feedback> findByUtilisateurIdAndCodingChallengeIdAndSupprimeFalse(
+            Long utilisateurId,
+            Long codingChallengeId
+    );
     boolean existsByCodingChallengeId(Long codingChallengeId);
     Optional<Feedback> findByCodingChallengeId(Long codingChallengeId);
 

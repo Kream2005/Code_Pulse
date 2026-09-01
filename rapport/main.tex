@@ -1,0 +1,349 @@
+%==============================================================================
+% CodePulse — Mémoire IID (ENSA) — FICHIER UNIQUE
+% Template basé sur iid.cls (Ghazdali). Contenu à remplir via le prompt Claude.
+% Placeholders : % <<< CLAUDE: ... >>>  et  images/XXX.png
+%==============================================================================
+\documentclass{iid}
+\usepackage{titletoc}
+\setlength{\glsdescwidth}{0.65\textwidth}
+
+% --- Identité (à compléter) ---
+\typeMemoire{Diplôme d’Ingénieur d'État }
+\optionFormation{\textbf{Informatique et Ingénierie des Données}\\ \includegraphics[scale=0.08]{images/logoIID.png}}
+\etudiant{Prenom \textbf{Nom}} % <<< CLAUDE / ÉTUDIANT : nom réel >>>
+\titreDuMemoire{CodePulse : plateforme de collecte et d'analyse des feedbacks après coding challenges, enrichie d'une recherche sémantique} % <<< ajuster si besoin >>>
+\dateSoutenance{ } % <<< date >>>
+\anneeScolaire{\the\year}
+
+\encadrants{Prenom \textbf{Nom}\\Prenom \textbf{Nom}} % <<< encadrants >>>
+
+\jurys{%
+\begin{tabular}{lll}
+	Nom et prénoms du président &  Entité & Président \\
+	Nom et prénoms de l'examinateur & Entité & Examinateur \\
+	Nom et prénoms du rapporteur &  Entité & Rapporteur \\
+\end{tabular}
+}
+
+\hypersetup{
+ pdftitle={CodePulse — Mémoire IID},
+ pdfauthor={--},
+ pdfsubject={Feedbacks coding challenges, Kafka, recherche sémantique},
+ pdfkeywords={Spring Boot, React, Kafka, PostgreSQL, pgvector, RAG}
+}
+
+\color{bookColor}
+\loadglsentries{glossaire_reduit}
+
+\begin{document}
+
+\pageDeGarde
+\pagecolor{white}
+\thispagestyle{empty}\ \clearpage
+
+\newpage
+\pagenumbering{roman}
+\setcounter{tocdepth}{0}
+\startlist{toc}
+\printlist{toc}{}{\chapter*{Sommaire}}
+\setcounter{tocdepth}{5}
+
+%------------------------------------------------------------------------------
+% DÉDICACE
+%------------------------------------------------------------------------------
+\dedicace
+\begin{fquote}
+\begin{center}
+\large{
+% <<< CLAUDE: rédiger une dédicace courte, sobre, personnelle (FR) >>>
+\uppercase{à} \ldots\\[12pt]
+Merci.
+}
+\end{center}
+\end{fquote}
+\begin{adjustwidth}{2cm}{1cm}
+\hspace*{\fill} \textbf{\textit{\large{- Prenom}}}
+\end{adjustwidth}
+\clearpage
+
+%------------------------------------------------------------------------------
+% REMERCIEMENTS
+%------------------------------------------------------------------------------
+\remerciements
+% <<< CLAUDE: remerciements concis (école, encadrants, entreprise/stage Capgemini si applicable, famille) — 1 page max >>>
+\newpage
+
+%------------------------------------------------------------------------------
+% RÉSUMÉ FR
+%------------------------------------------------------------------------------
+\resume
+% <<< CLAUDE: résumé FR ~3/4 page : contexte, problème, solution CodePulse, stack, résultats, mots-clés >>>
+\vspace{1cm}
+\noindent\rule[2pt]{\textwidth}{0.5pt}
+{\textbf{Mots clés :}}
+% <<< CLAUDE: 5–8 mots-clés FR >>>
+\\
+\noindent\rule[2pt]{\textwidth}{0.5pt}
+\clearpage
+
+%------------------------------------------------------------------------------
+% ABSTRACT EN
+%------------------------------------------------------------------------------
+\resumeAn
+% <<< CLAUDE: abstract EN miroir du résumé FR >>>
+\vspace{1cm}
+\noindent\rule[2pt]{\textwidth}{0.5pt}
+{\textbf{Keywords :}}
+% <<< CLAUDE: keywords EN >>>
+\\
+\noindent\rule[2pt]{\textwidth}{0.5pt}
+\newpage
+
+%------------------------------------------------------------------------------
+% RÉSUMÉ AR (optionnel — laisser court ou placeholder si non requis)
+%------------------------------------------------------------------------------
+\setcode{utf8}
+\chapter*{\hfill \RL{ملخص}}
+\setstretch{1.3}
+\begin{flushright}
+\RL{
+% <<< CLAUDE: résumé arabe court OU laisser une note « à compléter » si hors périmètre >>>
+}
+\end{flushright}
+\vspace{1cm}
+\noindent\rule[2pt]{\textwidth}{0.5pt}
+\begin{flushright}
+\RL{\textbf{كلمات مفتاحية \LR{:}} \ldots}
+\end{flushright}
+\noindent\rule[2pt]{\textwidth}{0.5pt}
+\newpage
+
+\selectlanguage{french}
+\dominitoc
+\tableofcontents
+\newpage
+\listoffigures
+\newpage
+\listoftables
+\newpage
+
+%------------------------------------------------------------------------------
+% LISTE DES SIGLES
+%------------------------------------------------------------------------------
+\listofsigle
+\begin{tabular}{rl}
+API & Application Programming Interface \\
+JWT & JSON Web Token \\
+JPA & Jakarta Persistence API \\
+RAG & Retrieval-Augmented Generation \\
+RRF & Reciprocal Rank Fusion \\
+KPI & Key Performance Indicator \\
+LLM & Large Language Model \\
+SMTP & Simple Mail Transfer Protocol \\
+FTS & Full-Text Search \\
+HNSW & Hierarchical Navigable Small World \\
+RH & Ressources Humaines \\
+CRUD & Create, Read, Update, Delete \\
+\end{tabular}
+% <<< CLAUDE: compléter si besoin >>>
+\newpage
+
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+%==============================================================================
+% INTRODUCTION GÉNÉRALE
+%==============================================================================
+\introduction
+% <<< CLAUDE: Introduction générale (contexte stage/entreprise, problème feedbacks post-challenge,
+% objectifs, périmètre, organisation du mémoire en 3 chapitres). Style humain, pas de remplissage. >>>
+\selectlanguage{french}
+\fancyhead[L]{\tiny \leftmark}
+\fancyhead[R]{\scriptsize \rightmark}
+\fancyfoot[C]{\thepage}
+
+%==============================================================================
+% CHAPITRE 1 — Contexte, analyse & spécification
+%==============================================================================
+\chapter{Contexte du projet, analyse des besoins et spécification}\label{chap:1}
+\minitoc
+
+\section*{Introduction}
+% <<< CLAUDE: intro chapitre 1 courte >>>
+
+\section{Contexte général et présentation de l'organisme d'accueil}
+% <<< CLAUDE: Capgemini / contexte stage (rester factuel, sans secrets). Objectif métier : collecter les retours après coding challenges. >>>
+
+\section{Problématique}
+% <<< CLAUDE: sans plateforme dédiée : pas de relance structurée, pas d'analytics par rôle, pas de recherche dans les commentaires, activation de comptes candidats difficile, etc. >>>
+
+\section{Objectifs du projet}
+\begin{itemize}
+  \item % <<< CLAUDE: objectifs mesurables (notifications, feedbacks, 4 rôles, Kafka, mails, search/RAG) >>>
+\end{itemize}
+
+\section{Périmètre fonctionnel}
+% <<< CLAUDE: dans / hors périmètre (challenge lui-même hors CodePulse ; CodePulse reçoit l'événement) >>>
+
+\section{Acteurs et cas d'utilisation}
+% <<< CLAUDE: 4 rôles USER, ADMIN_CODING_CHALLENGE, MANAGER_RH, ADMIN_CODEPULSE + figure >>>
+\begin{figure}[H]
+  \centering
+  % Exporter plantuml/07_cas_utilisation.puml → images/cas_utilisation.png
+  \includegraphics[width=0.95\textwidth]{images/cas_utilisation.png}
+  \caption{Diagramme de cas d'utilisation CodePulse}
+  \label{fig:cas-utilisation}
+\end{figure}
+
+\section{Exigences fonctionnelles et non fonctionnelles}
+% <<< CLAUDE: tableaux EF / ENF (sécurité JWT, soft-delete, perf laptop, open-source, pas Docker obligatoire) >>>
+
+\section{Méthodologie et organisation du travail}
+% <<< CLAUDE: phases (backend métier → front → search) ; outils Git, Postman, etc. bref >>>
+
+\section*{Conclusion}
+% <<< CLAUDE: conclusion chap. 1 >>>
+
+%==============================================================================
+% CHAPITRE 2 — Conception
+%==============================================================================
+\chapter{Conception de la solution}\label{chap:2}
+\minitoc
+
+\section*{Introduction}
+% <<< CLAUDE >>>
+
+\section{Architecture globale}
+% <<< CLAUDE: 3 couches Front / Spring / Search + Postgres + Kafka + Mail + Ollama optionnel >>>
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{images/architecture_globale.png}
+  \caption{Architecture globale de CodePulse}
+  \label{fig:arch-globale}
+\end{figure}
+
+\section{Choix technologiques}
+% <<< CLAUDE: justifier Spring Boot 4 / Java 21, React+Vite+Tailwind, PostgreSQL, Kafka, FastAPI, MiniLM, pgvector, Ollama — tableau avantages >>>
+
+\section{Modèle de domaine}
+% <<< CLAUDE: entités principales + enums ; soft-delete ; ownership search_chunk >>>
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{images/diagramme_classes.png}
+  \caption{Diagramme de classes (domaine simplifié)}
+  \label{fig:classes}
+\end{figure}
+
+\section{Conception des flux métier principaux}
+\subsection{Ingestion d'un challenge et notification}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\textwidth]{images/sequence_ingest_notif.png}
+  \caption{Séquence : ingest $\rightarrow$ notification $\rightarrow$ e-mail}
+  \label{fig:seq-ingest}
+\end{figure}
+% <<< CLAUDE: 4 cas d'objets (nouvel user+challenge, user existant+nouveau challenge, idempotence, user déjà complet) >>>
+
+\subsection{Activation de compte et soumission de feedback}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\textwidth]{images/sequence_feedback.png}
+  \caption{Séquence : complete-account et feedback}
+  \label{fig:seq-feedback}
+\end{figure}
+
+\subsection{Relance automatique}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\textwidth]{images/sequence_relance.png}
+  \caption{Séquence de relance}
+  \label{fig:seq-relance}
+\end{figure}
+
+\subsection{Recherche hybride et assistant RAG}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\textwidth]{images/sequence_rag.png}
+  \caption{Séquence recherche / assistant}
+  \label{fig:seq-rag}
+\end{figure}
+
+\section{Sécurité et gestion des accès}
+% <<< CLAUDE: JWT RS256, rôles, invite-only, scopes search par rôle >>>
+
+\section{Modes de déploiement (standalone / full)}
+% <<< CLAUDE: tableau ports 4200/8080/8090/5432/9092/1025/11434 >>>
+
+\section*{Conclusion}
+% <<< CLAUDE >>>
+
+%==============================================================================
+% CHAPITRE 3 — Réalisation, tests et démonstration
+%==============================================================================
+\chapter{Réalisation, tests et démonstration}\label{chap:3}
+\minitoc
+
+\section*{Introduction}
+% <<< CLAUDE >>>
+
+\section{Structure du dépôt et modules}
+% <<< CLAUDE: backend/, frontend/, codepulse-search/, challenge-publisher/, scripts/ >>>
+
+\section{Backend Spring Boot}
+% <<< CLAUDE: packages, auth, ingest Kafka+HTTP, notifications, feedbacks, analytics, mails HTML, relances, logs >>>
+
+\section{Frontend React}
+% <<< CLAUDE: pages par rôle, i18n FR/EN, thème, proxy Vite >>>
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\textwidth]{images/screenshot_login.png}
+  \caption{Écran de connexion}
+  \label{fig:ui-login}
+\end{figure}
+% <<< CLAUDE: autres captures (inbox, form, admin, analytics) avec \includegraphics screenshots >>>
+
+\section{Service codepulse-search}
+% <<< CLAUDE: phases 0–4, hybrid search, KPI SQL, RAG, knowledge, continuous learning >>>
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\textwidth]{images/screenshot_smart_search.png}
+  \caption{Interface Recherche intelligente}
+  \label{fig:ui-smart}
+\end{figure}
+
+\section{Intégration e-mails et boîte de démo}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\textwidth]{images/screenshot_mailbox.png}
+  \caption{Boîte mail de démo (/dev/mailbox) ou aperçu Gmail}
+  \label{fig:mailbox}
+\end{figure}
+
+\section{Tests et validation}
+% <<< CLAUDE: stratégie Postman (cas normaux/anormaux, 4 rôles, E2E) ; renvoyer vers docs/POSTMAN-FULL-APP-TEST-PLAN.md sans tout recopier >>>
+
+\section{Difficultés rencontrées et solutions}
+% <<< CLAUDE: pgvector Windows, MiniLM offline, 502 search, relances délai, SMTP Gmail, etc. — factuel >>>
+
+\section{Bilan et perspectives}
+% <<< CLAUDE: ce qui marche ; pistes (authz fine, modèles plus grands, CI, monitoring) >>>
+
+\section*{Conclusion}
+% <<< CLAUDE >>>
+
+%==============================================================================
+% CONCLUSION GÉNÉRALE
+%==============================================================================
+\conclusion
+% <<< CLAUDE: conclusion générale (apports, compétences, ouverture) — 1 à 2 pages max >>>
+
+\lhead[]{} \rhead[]{} \chead[]{}
+\addcontentsline{toc}{chapter}{Bibliographie}
+\bibliographystyle{abbrv}
+\bibliography{biblio}
+
+% Annexe optionnelle
+% \chapter*{Annexe}\addcontentsline{toc}{chapter}{Annexe}
+% <<< CLAUDE: éventuellement endpoints clés, comptes démo, commande PlantUML — sans dump inutile >>>
+
+\end{document}

@@ -19,6 +19,7 @@ import ResetPassword from './pages/ResetPassword';
 import Inbox from './pages/Inbox';
 import MyFeedback from './pages/MyFeedback';
 import FeedbackFormPage from './pages/FeedbackForm';
+import FeedbackFormEntry from './pages/FeedbackFormEntry';
 import FeedbackDetails from './pages/FeedbackDetails';
 import Profile from './pages/Profile';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -29,6 +30,7 @@ import AdminFeedbacks from './pages/admin/AdminFeedbacks';
 import AdminLogs from './pages/admin/AdminLogs';
 import AdminQuestions from './pages/admin/AdminQuestions';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
+import AdminSmartSearch from './pages/admin/AdminSmartSearch';
 import { isAdmin, isUser } from './auth';
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -49,6 +51,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/complete-account" element={<CompleteAccount />} />
+      <Route path="/feedback/enter" element={<FeedbackFormEntry />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/register" element={<Navigate to="/login" replace />} />
@@ -78,7 +81,7 @@ export default function App() {
         path="/feedback/form"
         element={
           <Shell>
-            <UserRoute>
+            <UserRoute redirectWrongRoleToLogin>
               <FeedbackFormPage />
             </UserRoute>
           </Shell>
@@ -200,6 +203,16 @@ export default function App() {
             <AnalyticsRoute>
               <AdminAnalytics />
             </AnalyticsRoute>
+          </Shell>
+        }
+      />
+      <Route
+        path="/admin/smart-search"
+        element={
+          <Shell>
+            <AdminRoute>
+              <AdminSmartSearch />
+            </AdminRoute>
           </Shell>
         }
       />

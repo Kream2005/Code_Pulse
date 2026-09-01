@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import Card from '../components/Card';
 import FilterSelect from '../components/FilterSelect';
 import PageHeader from '../components/PageHeader';
@@ -8,6 +7,7 @@ import SearchInput from '../components/SearchInput';
 import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
 import Table from '../components/Table';
+import FeedbackRowAction from '../components/FeedbackRowAction';
 import { getUserId } from '../auth';
 import {
   getChallengeTags,
@@ -24,7 +24,7 @@ const NOTIF_STATUSES = ['EN_ATTENTE', 'ENVOYEE', 'LUE', 'ECHEC'];
 export default function Inbox({ admin = false }: { admin?: boolean }) {
   const { t } = useI18n();
   const [items, setItems] = useState<NotificationDto[]>([]);
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
@@ -79,17 +79,17 @@ export default function Inbox({ admin = false }: { admin?: boolean }) {
   }, [admin, page, size, statut, tag, search, t]);
 
   function onSearchChange(value: string) {
-    setPage(0);
+    setPage(1);
     setSearch(value);
   }
 
   function onStatutChange(value: string) {
-    setPage(0);
+    setPage(1);
     setStatut(value);
   }
 
   function onTagChange(value: string) {
-    setPage(0);
+    setPage(1);
     setTag(value);
   }
 
@@ -174,13 +174,14 @@ export default function Inbox({ admin = false }: { admin?: boolean }) {
               </td>
               <td className="px-4 py-3">
                 <div className="flex flex-wrap gap-2">
-                  <Link
-                    to={`/feedback/form?challengeId=${n.codingChallengeId}`}
-                    className="inline-flex items-center rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-dark"
-                  >
-                    {t('common.feedback')}
-                  </Link>
-                  {!admin && n.statut !== 'LUE' && (
+                  <FeedbackRowAction
+                    feedbackId={n.feedbackId}
+                    feedbackStatut={n.feedbackStatut}
+                    codingChallengeId={n.codingChallengeId}
+                    variant="inbox"
+                    admin={admin}
+                  />
+                  {!admin && n.statut !== 'LUE' && n.feedbackStatut !== 'SOUMIS' && (
                     <button
                       type="button"
                       onClick={() => markRead(n)}
@@ -201,7 +202,7 @@ export default function Inbox({ admin = false }: { admin?: boolean }) {
           size={size}
           onPageChange={setPage}
           onSizeChange={(s) => {
-            setPage(0);
+            setPage(1);
             setSize(s);
           }}
         />

@@ -39,6 +39,8 @@ export interface NotificationDto {
   challengeTag?: string | null;
   challengeDuree?: number | null;
   challengeDescription?: string | null;
+  feedbackId?: number | null;
+  feedbackStatut?: string | null;
 }
 
 export interface CodingChallengeDto {
@@ -65,6 +67,10 @@ export interface FeedbackFormResponse {
   challenge: CodingChallengeDto;
   questions: QuestionFeedback[];
   alreadySubmitted: boolean;
+  feedbackId?: number | null;
+  noteGlobale?: number | null;
+  commentaire?: string | null;
+  reponses?: { questionId: number; valeur: string }[];
 }
 
 export interface SubmitFeedbackRequest {
